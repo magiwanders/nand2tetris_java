@@ -5,6 +5,7 @@
 
 import gui.Gui;
 import assembler.*;
+import vmtranslator.*;
 // import VMTranslator;
 
 import javafx.application.*;
@@ -25,6 +26,7 @@ public class nand2tetris extends Application {
     gui.getLoad2Button().setOnAction( e -> load2ButtonHandle() );
     gui.getLoad3Button().setOnAction( e -> load3ButtonHandle() );
     gui.getAssembleButton().setOnAction( e -> assembleButtonHandle() );
+    gui.getTranslateButton().setOnAction( e -> translateButtonHandle() );
   }
 
   private void load1ButtonHandle() {
@@ -50,6 +52,13 @@ public class nand2tetris extends Application {
     String assemblyFile = gui.getTextField3().getText();
     HackAssembler assembler = new HackAssembler(assemblyFile);
     gui.getTextField4().setText(assemblyFile.replaceAll(".asm", ".hack"));
+  }
+
+  private void translateButtonHandle() {
+    String VMFile = gui.getTextField2().getText();
+    CodeWriter translator = new CodeWriter(VMFile);
+    gui.getTextField3().setText(VMFile.replaceAll(".vm", ".asm"));
+    assembleButtonHandle();
   }
 
   @Override

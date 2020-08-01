@@ -133,4 +133,8 @@ public class Gui extends Stage {
       return assembleButton;
     }
 
+    public Button getTranslateButton() {
+      return translateButton;
+    }
+
 }
