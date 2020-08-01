@@ -14,7 +14,7 @@ public class HackAssembler {
     private int programLength;
     private String line; // Current line.
 
-    private static final String assemblyFile = "/home/magiwanders/Documents/Studio/SelfStudy/ComputerArchitecture/nand2tetris/projects/06/pong/PongL.asm";
+    private static final String assemblyFile;
 
     public HackAssembler() {
         symbolTable = new SymbolTable();
@@ -149,6 +149,7 @@ public class HackAssembler {
     }
 
     public static void main(String [] args) {
+        assemblyFile = args[0];
         HackAssembler hackAssembler = new HackAssembler();
     }
 
