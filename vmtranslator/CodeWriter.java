@@ -160,12 +160,12 @@ public class CodeWriter {
 
     private void writeAand() {
       writeAprimer();
-      w.println("M=M&D"); // ANDs D (which contains the other factor y) and x and puts it in x (x = x&y)
+      w.println("M=D&M"); // ANDs D (which contains the other factor y) and x and puts it in x (x = x&y)
     }
 
     private void writeAor() {
       writeAprimer();
-      w.println("M=M|D"); // ORs D (which contains the other factor y) and x and puts it in x (x = x|y)
+      w.println("M=D|M"); // ORs D (which contains the other factor y) and x and puts it in x (x = x|y)
     }
 
     private void writeAnot() {
