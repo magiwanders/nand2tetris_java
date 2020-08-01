@@ -1,4 +1,4 @@
-package nand2tetris;
+package assembler;
 
 import java.io.*;
 import java.util.*;
@@ -53,7 +53,7 @@ public class SymbolTable {
         if(symbolTable.containsKey(valueString)) return Integer.parseInt(symbolTable.get(valueString));
         add(valueString, memoryCell);
         memoryCell++;
-        return memoryCell-1; 
+        return memoryCell-1;
     }
 
 }

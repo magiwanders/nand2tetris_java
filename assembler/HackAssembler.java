@@ -1,4 +1,4 @@
-package nand2tetris;
+package assembler;
 
 import java.io.*;
 import java.util.*;
