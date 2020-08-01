@@ -31,7 +31,7 @@ public class HackAssembler {
             r = new BufferedReader(new FileReader(new File(assemblyFile)));
             w = new PrintWriter(new FileWriter(new File(assemblyFile.replaceAll(".asm", ".hack"))));
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); 
         }
     }
 

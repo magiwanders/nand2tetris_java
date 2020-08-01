@@ -25,6 +25,7 @@ public class nand2tetris extends Application {
     gui.getLoad2Button().setOnAction( e -> load2ButtonHandle() );
     gui.getLoad3Button().setOnAction( e -> load3ButtonHandle() );
     gui.getAssembleButton().setOnAction( e -> assembleButtonHandle() );
+    gui.getOpen4Button().setOnAction(e -> open4ButtonHandle() );
   }
 
   private void load1ButtonHandle() {
@@ -47,7 +48,14 @@ public class nand2tetris extends Application {
   }
 
   private void assembleButtonHandle() {
-    HackAssembler assembler = new HackAssembler(gui.getTextField3().getText());
+    String assemblyFile = gui.getTextField3().getText();
+    HackAssembler assembler = new HackAssembler(assemblyFile);
+    gui.getTextField4().setText(assemblyFile.replaceAll(".asm", ".hack"));
+  }
+
+  private void open4ButtonHandle() {
+    HostServices hostServices = getHostServices();
+    hostServices.showDocument(gui.getTextField4().getText());
   }
 
   @Override
