@@ -4,7 +4,7 @@
 // java --module-path $PATH_TO_FX --add-modules javafx.controls secondaprovainitinere.src.Client
 
 import gui.Gui;
-//import assembler;
+import assembler.*;
 // import VMTranslator;
 
 import javafx.application.*;
@@ -47,7 +47,7 @@ public class nand2tetris extends Application {
   }
 
   private void assembleButtonHandle() {
-    
+
   }
 
   @Override
