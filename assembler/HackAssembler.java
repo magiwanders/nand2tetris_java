@@ -14,20 +14,16 @@ public class HackAssembler {
     private int programLength;
     private String line; // Current line.
 
-    private static final String assemblyFile;
+    private static String assemblyFile;
 
-    public HackAssembler() {
+    public HackAssembler(String file) {
+        assemblyFile = file;
         symbolTable = new SymbolTable();
         parse = new Parser();
         translate = new Code();
         program = new Vector<String>();
         initializeIO(); // Creates reader and writer to .asm and .hack files respectively.
         execute();
-    }
-
-    public HackAssembler(String file) {
-        assemblyFile = file;
-        this();
     }
 
     private void initializeIO() {
