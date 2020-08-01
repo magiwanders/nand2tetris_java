@@ -47,7 +47,7 @@ public class nand2tetris extends Application {
   }
 
   private void assembleButtonHandle() {
-    
+    HackAssembler assembler = new HackAssembler(gui.getTextField3().getText());
   }
 
   @Override
