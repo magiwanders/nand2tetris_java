@@ -17,6 +17,7 @@ public class HackAssembler {
     private static final String assemblyFile;
 
     public HackAssembler() {
+        assemblyFile = args[0];
         symbolTable = new SymbolTable();
         parse = new Parser();
         translate = new Code();
@@ -149,7 +150,6 @@ public class HackAssembler {
     }
 
     public static void main(String [] args) {
-        assemblyFile = args[0];
         HackAssembler hackAssembler = new HackAssembler();
     }
 
