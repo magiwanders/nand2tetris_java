@@ -17,13 +17,17 @@ public class HackAssembler {
     private static final String assemblyFile;
 
     public HackAssembler() {
-        assemblyFile = args[0];
         symbolTable = new SymbolTable();
         parse = new Parser();
         translate = new Code();
         program = new Vector<String>();
         initializeIO(); // Creates reader and writer to .asm and .hack files respectively.
         execute();
+    }
+
+    public HackAssembler(String file) {
+        assemblyFile = file;
+        this();
     }
 
     private void initializeIO() {
@@ -147,10 +151,6 @@ public class HackAssembler {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public static void main(String [] args) {
-        HackAssembler hackAssembler = new HackAssembler();
     }
 
     private void printProgram(String caller) {

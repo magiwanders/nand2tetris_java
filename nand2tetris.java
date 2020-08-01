@@ -47,7 +47,7 @@ public class nand2tetris extends Application {
   }
 
   private void assembleButtonHandle() {
-
+    
   }
 
   @Override
