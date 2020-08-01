@@ -35,7 +35,6 @@ public class Gui extends Stage {
     private HBox binary;
       private Label label4;
       private TextField textField4;
-      private Button open4;
 
     private Label errorLabel;
 
@@ -66,7 +65,6 @@ public class Gui extends Stage {
         binary = new HBox();
           label4 = new Label("Binary File:   ");
           textField4 = new TextField();
-          open4 = new Button("Open in Text Editor");
 
         errorLabel = new Label();
 
@@ -98,7 +96,6 @@ public class Gui extends Stage {
       root.getChildren().add(binary);
         binary.getChildren().add(label4);
         binary.getChildren().add(textField4);
-        binary.getChildren().add(open4);
       root.getChildren().add(errorLabel);
       errorLabel.setWrapText(true);
 
@@ -134,10 +131,6 @@ public class Gui extends Stage {
 
     public Button getAssembleButton() {
       return assembleButton;
-    }
-
-    public Button getOpen4Button() {
-      return open4;
     }
 
 }
