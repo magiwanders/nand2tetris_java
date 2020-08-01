@@ -21,7 +21,33 @@ public class nand2tetris extends Application {
   private Gui gui;
 
   private void setActions() {
-    //gui.getAssemblerButton().setOnAction( this::assembleButtonHandle() );
+    gui.getLoad1Button().setOnAction( e -> load1ButtonHandle() );
+    gui.getLoad2Button().setOnAction( e -> load2ButtonHandle() );
+    gui.getLoad3Button().setOnAction( e -> load3ButtonHandle() );
+    gui.getAssembleButton().setOnAction( e -> assembleButtonHandle() );
+  }
+
+  private void load1ButtonHandle() {
+    gui.getTextField1().setText(getFile());
+  }
+
+  private void load2ButtonHandle() {
+    gui.getTextField2().setText(getFile());
+  }
+
+  private void load3ButtonHandle() {
+    gui.getTextField3().setText(getFile());
+  }
+
+  private String getFile() {
+    Stage stage = new Stage();
+    FileChooser fileChooser = new FileChooser();
+    File file = fileChooser.showOpenDialog(stage);
+    return file.getAbsolutePath();
+  }
+
+  private void assembleButtonHandle() {
+    
   }
 
   @Override

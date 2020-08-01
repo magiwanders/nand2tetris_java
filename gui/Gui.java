@@ -44,13 +44,13 @@ public class Gui extends Stage {
         root = new VBox();
 
         jackFile = new HBox();
-          label1 = new Label("Jack File: ");
+          label1 = new Label("Jack File:     ");
           textField1 = new TextField();
           load1 = new Button("Load");
 
         compileButton = new Button("Compile");
         vmcode = new HBox();
-          label2 = new Label("VMCode: ");
+          label2 = new Label("VMCode:        ");
           textField2 = new TextField();
           load2 = new Button("Load");
 
@@ -63,7 +63,7 @@ public class Gui extends Stage {
 
         assembleButton = new Button("Assemble");
         binary = new HBox();
-          label4 = new Label("Binary File: ");
+          label4 = new Label("Binary File:   ");
           textField4 = new TextField();
 
         errorLabel = new Label();
@@ -99,6 +99,38 @@ public class Gui extends Stage {
       root.getChildren().add(errorLabel);
       errorLabel.setWrapText(true);
 
+    }
+
+    public Button getLoad1Button() {
+      return load1;
+    }
+
+    public Button getLoad2Button() {
+      return load2;
+    }
+
+    public Button getLoad3Button() {
+      return load3;
+    }
+
+    public TextField getTextField1() {
+      return textField1;
+    }
+
+    public TextField getTextField2() {
+      return textField2;
+    }
+
+    public TextField getTextField3() {
+      return textField3;
+    }
+
+    public TextField getTextField4() {
+      return textField4;
+    }
+
+    public Button getAssembleButton() {
+      return assembleButton;
     }
 
 }
