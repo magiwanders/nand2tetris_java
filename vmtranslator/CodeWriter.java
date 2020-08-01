@@ -14,6 +14,8 @@ public class CodeWriter {
 
     private static String VMFile;
 
+    private int lineNumber = 0;
+
     public CodeWriter(String file) {
         VMFile = file;
         parse = new Parser();
@@ -76,6 +78,7 @@ public class CodeWriter {
               case "B": writeB(); break; // B is MEMORY SEGMENT command
               default: break;
             }
+            lineNumber++;
         }
     }
 
@@ -106,13 +109,13 @@ public class CodeWriter {
       w.println("@SP"); // in case it doesn't jump, it has to write false
       w.println("A=M-1"); // last element of stack
       w.println("M=0"); // sets it to FALSE
-      w.println("@END"); // points to the end
+      w.println("@END_" + lineNumber); // points to the end
       w.println("0;JMP"); // goes to the end
-      w.println("(LABEL)"); // in case it jumps
+      w.println("(LABEL_" + lineNumber + ")"); // in case it jumps
       w.println("@SP");
       w.println("A=M-1"); // last element of stack
       w.println("M=-1"); // sets it to TRUE
-      w.println("(END)");
+      w.println("(END_" + lineNumber + ")");
     }
 
     private void writeAadd() {
@@ -134,7 +137,7 @@ public class CodeWriter {
     private void writeAeq() {
       writeAprimer();
       w.println("D=M-D"); // subtracts D (which contains the other factor y) to x and puts it in D (D = x-y)
-      w.println("@LABEL"); // points LABEL
+      w.println("@LABEL_" + lineNumber); // points LABEL
       w.println("D;JEQ"); // if x==y, then x-y==0 and the program jumps to (LABEL)
       writeApost();
     }
@@ -142,7 +145,7 @@ public class CodeWriter {
     private void writeAgt() {
       writeAprimer();
       w.println("D=M-D"); // subtracts D (which contains the other factor y) to x and puts it in D (D = x-y)
-      w.println("@LABEL"); // points LABEL
+      w.println("@LABEL_" + lineNumber); // points LABEL
       w.println("D;JGT"); // if x>y, then x-y>0 and the program jumps to (LABEL)
       writeApost();
     }
@@ -150,7 +153,7 @@ public class CodeWriter {
     private void writeAlt() {
       writeAprimer();
       w.println("D=M-D"); // subtracts D (which contains the other factor y) to x and puts it in D (D = x-y)
-      w.println("@LABEL"); // points LABEL
+      w.println("@LABEL_" + lineNumber); // points LABEL
       w.println("D;JLT"); // if x==y, then x-y==0 and the program jumps to (LABEL)
       writeApost();
     }
