@@ -1,7 +1,7 @@
 // From nand2tetris_java folder
 // export PATH_TO_FX=secondaprovainitinere/src/javafx/lib
 // javac --module-path $PATH_TO_FX --add-modules javafx.controls nand2tetris.java
-// java --module-path $PATH_TO_FX --add-modules javafx.controls secondaprovainitinere.src.Client
+// java --module-path $PATH_TO_FX --add-modules javafx.controls nand2tetris
 
 import gui.Gui;
 import assembler.*;
