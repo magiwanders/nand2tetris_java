@@ -27,6 +27,7 @@ public class CodeWriter {
             initializeFile(file);
             execute(file);
         }
+        translate();
         exit();
     }
 
@@ -34,7 +35,6 @@ public class CodeWriter {
         parse = new Parser();
         program = new Vector<String>();
         loadFile(); // Also removes spaces and comments.
-        translate();
     }
 
     private void initializeFile(String file) {
@@ -88,9 +88,12 @@ public class CodeWriter {
         for(int i=0; i<programLength; i++) {
             line = program.elementAt(i);
             w.println("// Translating command : " + line);
+            System.out.println(parse.commandType(line));
             switch(parse.commandType(line)) {
-              case "A": writeA(); break; // A is ARITHMETIC/LOGIC command
-              case "B": writeB(); break; // B is MEMORY SEGMENT command
+                case "A": writeA(); break; // A is ARITHMETIC/LOGIC command
+                case "B": writeB(); break; // B is MEMORY SEGMENT command
+                case "C": writeC(); break; // C is BRANCHING command
+                case "D": writeD(); break; // D is FUNCTION command
               default: break;
             }
             lineNumber++;
@@ -210,7 +213,7 @@ public class CodeWriter {
         case "temp": w.println("@5"); w.println("D=A");break;
         default: break;
       }
-      if (arg2.equals("constant") || arg2.equals("pointer"))
+      if (arg2.equals("constant") || arg2.equals("pointer")) return;
       else writeBfinal();
     }
 
@@ -260,7 +263,7 @@ public class CodeWriter {
         case "temp": w.println("@5"); w.println("D=A"); break;
         default: break;
       }
-      if (pointer)
+      if (pointer) return;
       else writeBpopFinal();
     }
 
@@ -293,6 +296,14 @@ public class CodeWriter {
         default: break;
       }
       w.println("M=D");
+    }
+
+    private void writeC() {
+
+    }
+
+    private void writeD() {
+
     }
 
     public void exit() {
