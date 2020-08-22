@@ -55,25 +55,25 @@ public class nand2tetris extends Application {
   }
 
   private void translateButtonHandle() {
-    String VMFile = gui.getTextField2().getText();
-    CodeWriter translator = new CodeWriter(VMFile);
-    gui.getTextField3().setText(VMFile.replaceAll(".vm", ".asm"));
+    File VMFile = new File(gui.getTextField2().getText());
+    CodeWriter translator = new CodeWriter(VMFile, VMFile.isDirectory());
+    gui.getTextField3().setText(VMFile.getAbsolutePath().replaceAll(".vm", ".asm"));
     assembleButtonHandle();
   }
 
   @Override
-  public void init() throws Exception {
+  public void init() {
     System.out.println("Nand2Tetris program initializing...");
   }
 
   @Override
-  public void start(Stage window) throws Exception {
+  public void start(Stage window) {
     gui = new Gui();
     setActions();
   }
 
   @Override
-  public void stop() throws Exception {
+  public void stop() {
     System.out.println("Exiting.");
 
   }

@@ -1,5 +1,6 @@
 package vmtranslator;
 
+import javax.print.DocFlavor;
 import java.io.*;
 import java.util.*;
 
@@ -12,27 +13,42 @@ public class CodeWriter {
     private int programLength;
     private String line; // Current line.
 
-    private static String VMFile;
-
     private int lineNumber = 0;
 
-    public CodeWriter(String file) {
-        VMFile = file;
-        parse = new Parser();
-        program = new Vector<String>();
-        initializeIO(); // Creates reader and writer to .asm and .hack files respectively.
-        loadFile(); // Also removes spaces and comments.
-        translate();
+    public CodeWriter(File path, boolean isDirectory) {
+        if (isDirectory) {
+            initializeDirectory(path);
+            for(String file : path.list()) {
+                String absoluteFilePath = path.getAbsolutePath() + File.separator + file;
+                execute(absoluteFilePath);
+            }
+        } else {
+            String file = path.getAbsolutePath();
+            initializeFile(file);
+            execute(file);
+        }
         exit();
     }
 
-    private void initializeIO() {
+    private void execute(String file) {
+        parse = new Parser();
+        program = new Vector<String>();
+        loadFile(); // Also removes spaces and comments.
+        translate();
+    }
+
+    private void initializeFile(String file) {
         try {
-            r = new BufferedReader(new FileReader(new File(VMFile)));
-            w = new PrintWriter(new FileWriter(new File(VMFile.replaceAll(".vm", ".asm"))));
+            r = new BufferedReader(new FileReader(new File(file)));
+            w = new PrintWriter(new FileWriter(new File(file.replaceAll(".vm", ".asm"))));
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void initializeDirectory(File path) {
+        String cumulativeFileName = path.getAbsolutePath() + File.separator + path.getName() + ".asm";
+        initializeFile(cumulativeFileName);
     }
 
     private void loadFile() {
@@ -41,7 +57,7 @@ public class CodeWriter {
                 line = r.readLine();
                 if (line == null) break; // File ended.
                 clean(); // Removes spaces and comments from each line.
-                if(!line.isEmpty() && line != null) {
+                if(!line.isEmpty()) {
                     program.add(line);
                 }
             }
@@ -54,7 +70,6 @@ public class CodeWriter {
     }
 
     private void clean() {
-        if(line.equals(null)) return; // Ya never know.
         //line = line.replaceAll(" ", ""); // Removes spaces
         line = removeComments(line); // Removes comments
     }
@@ -195,7 +210,7 @@ public class CodeWriter {
         case "temp": w.println("@5"); w.println("D=A");break;
         default: break;
       }
-      if (arg2.equals("constant") || arg2.equals("pointer")) return;
+      if (arg2.equals("constant") || arg2.equals("pointer"))
       else writeBfinal();
     }
 
@@ -245,7 +260,7 @@ public class CodeWriter {
         case "temp": w.println("@5"); w.println("D=A"); break;
         default: break;
       }
-      if (pointer) return;
+      if (pointer)
       else writeBpopFinal();
     }
 
