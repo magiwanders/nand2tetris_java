@@ -330,9 +330,17 @@ public class CodeWriter {
     private void writeD() {
         System.out.println("Command type: D");
         switch(parse.arg1(line)) { // wether is a PUSH or POP
-            case "push": writeBpush(); break;
-            case "pop": writeBpop(); break;
+            case "function": writeDfunction(); break;
+            case "call": writeDcall(); break;
+            case "return": writeDreturn(); break;
             default: break;
+        }
+    }
+
+    private void writeDfunction() {
+        w.println("(" + parse.arg2(line) + ")");
+        for(int i=0; i<Integer.parseInt(parse.arg1(line)); i++) {
+
         }
     }
 
