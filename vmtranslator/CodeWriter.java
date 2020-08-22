@@ -340,7 +340,7 @@ public class CodeWriter {
     private void writeDfunction() {
         w.println("(" + parse.arg2(line) + ")");
         for(int i=0; i<Integer.parseInt(parse.arg1(line)); i++) {
-
+b
         }
     }
 
