@@ -9,7 +9,6 @@ public class Parser {
         System.out.println("Parsing: " + line);
         if (isA(line)) return "A";
         String identifier = line.substring(0, line.indexOf(" "));
-        System.out.println("Found Id: " + identifier);
         if (isB(identifier)) return "B";
         else if (isC(identifier)) return "C";
         else if (isD(identifier)) return "D";
@@ -55,14 +54,15 @@ public class Parser {
       int i = line.indexOf(" ");
       if (i==-1) return null;
       int j = line.indexOf(" ", i+1);
-      return line.substring(i+1, j);
+      if (j==-1) return line.substring(i+1, line.length()).replaceAll(" ", "");
+      return line.substring(i+1, j).replaceAll(" ", "");
     }
 
     public String arg3(String line) {
       int i = line.indexOf(" ");
       if (i==-1) return null;
       int j = line.indexOf(" ", i+1);
-      return line.substring(j+1, line.length());
+      return line.substring(j+1, line.length()).replaceAll(" ", "");
     }
 
 }

@@ -87,8 +87,7 @@ public class CodeWriter {
     private void translate() {
         for(int i=0; i<programLength; i++) {
             line = program.elementAt(i);
-            w.println("// Translating command : " + line);
-            System.out.println(parse.commandType(line));
+            w.println("//" + line);
             switch(parse.commandType(line)) {
                 case "A": writeA(); break; // A is ARITHMETIC/LOGIC command
                 case "B": writeB(); break; // B is MEMORY SEGMENT command
@@ -101,6 +100,7 @@ public class CodeWriter {
     }
 
     private void writeA() { // ARITHMETIC/LOGIC command
+        System.out.println("Command type: A");
         switch(line) { // line content coincides with the command
           case "add": writeAadd(); break;
           case "sub": writeAsub(); break;
@@ -193,6 +193,7 @@ public class CodeWriter {
     }
 
     private void writeB() { // MEMORY SEGMENT command
+        System.out.println("Command type: B");
       switch(parse.arg1(line)) { // wether is a PUSH or POP
         case "push": writeBpush(); break;
         case "pop": writeBpop(); break;
@@ -286,24 +287,53 @@ public class CodeWriter {
     }
 
     private void writeBpopPointer() {
-      w.println("@SP");
-      w.println("M=M-1");
-      w.println("A=M");
-      w.println("D=M");
-      switch (parse.arg3(line)) {
-        case "0": w.println("@THIS"); break;
-        case "1": w.println("@THAT"); break;
-        default: break;
-      }
+        w.println("@SP");
+        w.println("M=M-1");
+        w.println("A=M");
+        w.println("D=M");
+        switch (parse.arg3(line)) {
+            case "0": w.println("@THIS"); break;
+            case "1": w.println("@THAT"); break;
+            default: break;
+        }
       w.println("M=D");
     }
 
     private void writeC() {
+        System.out.println("Command type: C");
+        switch(parse.arg1(line)) { // wether is a PUSH or POP
+            case "label": writeClabel(); break;
+            case "if-goto": writeCifgoto(); break;
+            case "goto": writeCgoto(); break;
+            default: break;
+        }
+    }
 
+    private void writeClabel() {
+        w.println("(" + parse.arg2(line) + ")"); // Writes label name
+    }
+
+    private void writeCifgoto() {
+        w.println("@SP");
+        w.println("M=M-1");
+        w.println("A=M");
+        w.println("D=M");
+        w.println("@" + parse.arg2(line));
+        w.println("D;JNE");
+    }
+
+    private void writeCgoto() {
+        w.println("@" + parse.arg2(line));
+        w.println("0;JEQ");
     }
 
     private void writeD() {
-
+        System.out.println("Command type: D");
+        switch(parse.arg1(line)) { // wether is a PUSH or POP
+            case "push": writeBpush(); break;
+            case "pop": writeBpop(); break;
+            default: break;
+        }
     }
 
     public void exit() {
