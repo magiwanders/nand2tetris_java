@@ -27,7 +27,7 @@ public class CodeWriter {
             initializeFile(file);
             execute(file);
         }
-        translate();
+        translateFile();
         exit();
     }
 
@@ -84,18 +84,22 @@ public class CodeWriter {
         return line;
     }
 
-    private void translate() {
+    private void translateFile() {
         for(int i=0; i<programLength; i++) {
             line = program.elementAt(i);
-            w.println("//" + line);
-            switch(parse.commandType(line)) {
-                case "A": writeA(); break; // A is ARITHMETIC/LOGIC command
-                case "B": writeB(); break; // B is MEMORY SEGMENT command
-                case "C": writeC(); break; // C is BRANCHING command
-                case "D": writeD(); break; // D is FUNCTION command
-              default: break;
-            }
+            translateLine();
             lineNumber++;
+        }
+    }
+
+    private void translateLine() {
+        w.println("//" + line);
+        switch(parse.commandType(line)) {
+            case "A": writeA(); break; // A is ARITHMETIC/LOGIC command
+            case "B": writeB(); break; // B is MEMORY SEGMENT command
+            case "C": writeC(); break; // C is BRANCHING command
+            case "D": writeD(); break; // D is FUNCTION command
+            default: break;
         }
     }
 
@@ -329,7 +333,7 @@ public class CodeWriter {
 
     private void writeD() {
         System.out.println("Command type: D");
-        switch(parse.arg1(line)) { // wether is a PUSH or POP
+        switch(parse.arg1(line)) {
             case "function": writeDfunction(); break;
             case "call": writeDcall(); break;
             case "return": writeDreturn(); break;
@@ -337,12 +341,130 @@ public class CodeWriter {
         }
     }
 
+    private void writeDcall() {
+        w.println("@SP"); // push SP(returnAddress) and save SP (future SP-5) in general purpose register R14 and nArgs in R15
+        w.println("M=M+1");
+        w.println("AD=M-1");
+        w.println("M=D");
+        w.println("@R14");
+        w.println("M=D");
+        w.println("@" + parse.arg3(line));
+        w.println("D=A");
+        w.println("@R15");
+        w.println("M=D");
+
+        w.println("@LCL"); // push LCL
+        simplePush();
+
+        w.println("@ARG"); // push ARG
+        simplePush();
+
+        w.println("@THIS"); // push THIS
+        simplePush();
+
+        w.println("@THAT"); // push THAT
+        simplePush();
+
+        w.println("@LCL"); // push LCL
+        simplePush();
+
+        w.println("@R14"); // ARG = SP-5-nArgs ("SP-5" is in gen.pur.register R14 and nArgs in R15)
+        w.println("D=M");
+        w.println("@R15");
+        w.println("D=D-M"); // (SP-5)-nArgs
+        w.println("@ARG");
+        w.println("M=D");
+
+        w.println("@SP"); // LCL = SP
+        w.println("D=M");
+        w.println("@LCL");
+        w.println("M=D");
+
+        String originalLine = line;
+        String functionName = parse.arg2(line); // goto functionName
+        line = "goto " + functionName;
+        translateLine();
+
+        line = "label " + functionName + "$returnAddress";
+        translateLine();
+
+        line = originalLine;
+    }
+
+    private void simplePush() {
+        w.println("D=M");
+        w.println("@SP");
+        w.println("M=M+1");
+        w.println("A=M-1");
+        w.println("M=D");
+    }
+
+    private void writeDreturn() {
+        w.println("@LCL"); // LCL saved to endframe (gen.pur.register R15)
+        w.println("D=M");
+        w.println("@R15");
+        w.println("M=D");
+
+        w.println("M=M-1"); // enframe-5
+        w.println("M=M-1");
+        w.println("M=M-1");
+        w.println("M=M-1");
+        w.println("MD=M-1");
+
+        // get returnAddress as endframe-5 = LCL-5
+        w.println("@R14"); // save it to R14
+        w.println("M=D-1");
+
+        w.println("@SP"); // pop returnValue(last element of the stack) to *ARG (arg zero)
+        w.println("M=M-1");
+        w.println("A=M");
+        w.println("D=M");
+        w.println("@ARG");
+        w.println("A=M");
+        w.println("M=D");
+
+        w.println("@R15"); // LCL = endframe-4
+        w.println("AMD=M+1");
+        w.println("D=M");
+        w.println("@LCL");
+        w.println("M=D");
+
+        w.println("@R15"); // ARG = endframe-3
+        w.println("AMD=M+1");
+        w.println("D=M");
+        w.println("@ARG");
+        w.println("M=D");
+
+        w.println("@R15"); // THIS = endframe-2
+        w.println("AMD=M+1");
+        w.println("D=M");
+        w.println("@THIS");
+        w.println("M=D");
+
+        w.println("@R15"); // THAT = endframe-1
+        w.println("AMD=M+1");
+        w.println("D=M");
+        w.println("@THAT");
+        w.println("M=D");
+
+        w.println("@R14"); // goto return address stored in R14
+        w.println("D=M");
+        w.println("@SP");
+        w.println("M=D");
+    }
+
     private void writeDfunction() {
         w.println("(" + parse.arg2(line) + ")");
-        for(int i=0; i<Integer.parseInt(parse.arg1(line)); i++) {
-b
+        String originalLine = line;
+        int args = Integer.parseInt(parse.arg3(line));
+        for(int i=0; i<args; i++) {
+            line = "push constant 0";
+            translateLine();
         }
+        line = originalLine;
     }
+
+
 
     public void exit() {
         try{

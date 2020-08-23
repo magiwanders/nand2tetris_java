@@ -8,6 +8,7 @@ public class Parser {
     public String commandType(String line) {
         System.out.println("Parsing: " + line);
         if (isA(line)) return "A";
+        if (line.equals("return")) return "D";
         String identifier = line.substring(0, line.indexOf(" "));
         if (isB(identifier)) return "B";
         else if (isC(identifier)) return "C";
@@ -40,8 +41,8 @@ public class Parser {
 
     private boolean isD(String id) {
         return  id.equals("function") ||
-                id.equals("call") ||
-                id.equals("return");
+                id.equals("call");// ||
+                //id.equals("return");
     }
 
     public String arg1(String line) {
