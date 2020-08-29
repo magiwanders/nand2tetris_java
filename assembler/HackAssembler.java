@@ -1,3 +1,7 @@
+//
+// HACK ASSEMBLER - translates assembly (foo.asm) into Hack machine language (foo.hack).
+//
+
 package assembler;
 
 import java.io.*;
@@ -5,44 +9,44 @@ import java.util.*;
 
 public class HackAssembler {
 
+
+
+    // ATTRIBUTES
+
+    // In order to read the .asm file and write to the .hack file
     private BufferedReader r;
     private PrintWriter w;
-    private SymbolTable symbolTable;
-    private Parser parse;
-    private Code translate;
-    private Vector<String> program;
-    private int programLength;
-    private String line; // Current line.
 
-    private static String assemblyFile;
+    // The three other components of the assembler
+    private final SymbolTable symbolTable; // Contains the mapping of symbolic references (predefined symbols, labels, static variables)
+    private final Parser parse;            // Decomposes each assembly instruction and retrieves its various parts.
+    private final BinaryTable translate;   // Contains the mapping of each part of instruction with the corresponding binary code.
+
+    // Loaded file internal representation.
+    private static String assemblyFile;   // Contains the full path of the .asm file
+    private final Vector<String> program; // Contains the entire .asm file inside the program, in order to easily double-pass it.
+    private String line;                  // Current line being processed.
+
+
+
+    // CONSTRUCTOR
 
     public HackAssembler(String file) {
+        // Initialize the attrbutes.
         assemblyFile = file;
         symbolTable = new SymbolTable();
         parse = new Parser();
-        translate = new Code();
+        translate = new BinaryTable();
         program = new Vector<String>();
-        initializeIO(); // Creates reader and writer to .asm and .hack files respectively.
-        execute();
-    }
 
-    private void initializeIO() {
-        try {
-            r = new BufferedReader(new FileReader(new File(assemblyFile)));
-            w = new PrintWriter(new FileWriter(new File(assemblyFile.replaceAll(".asm", ".hack"))));
-        } catch (Exception e) {
-            e.printStackTrace(); 
-        }
-    }
-
-    private void execute() {
-        loadFile(); // Also removes spaces and comments.
-        scanLabels();
-        finalScan();
-        exit();
+        loadFile(); // Loads the .asm file into
+        execute();      //
     }
 
     private void loadFile() {
+
+        initializeIO(); // Creates reader and writer to .asm and .hack files respectively.
+
         try {
             while(true) {
                 line = r.readLine();
@@ -53,13 +57,27 @@ public class HackAssembler {
                 }
             }
 
-            programLength = program.size();
-
             printProgram("After loadFile()");
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void initializeIO() {
+        try {
+            r = new BufferedReader(new FileReader(new File(assemblyFile)));
+            w = new PrintWriter(new FileWriter(new File(assemblyFile.replaceAll(".asm", ".hack"))));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void execute() {
+        loadFile(); // Also removes spaces and comments.
+        scanLabels();
+        finalScan();
+        exit();
     }
 
     private void clean() {
@@ -82,7 +100,7 @@ public class HackAssembler {
         String label;
         int index1, index2;
 
-        for(int i=0; i<programLength; i++) {
+        for(int i=0; i<program.size(); i++) {
             line = program.elementAt(i);
 
             index1 = line.indexOf("(");
@@ -94,7 +112,6 @@ public class HackAssembler {
                 System.out.println("i="+i+" Trovata label: "+label+". Memorizzata in: " + (i));
                 program.removeElementAt(i);
                 i--; // Torna indietro perchè ho tolto la linea corrispondente alla label.
-                programLength = program.size();
             }
         }
 
@@ -102,7 +119,7 @@ public class HackAssembler {
     }
 
     private void finalScan() {
-        for(int i=0; i<programLength; i++) {
+        for(int i=0; i<program.size(); i++) {
             line = program.elementAt(i);
             if(line.indexOf("(")!=0) {
                 if(line.indexOf("@") == 0) handleAInstruction();
@@ -151,7 +168,7 @@ public class HackAssembler {
 
     private void printProgram(String caller) {
         System.out.println( "[" + caller + "] Corrente stato interno del programma: ");
-        for(int i=0; i<programLength; i++) {
+        for(int i=0; i<program.size(); i++) {
             System.out.println(program.elementAt(i));
         }
     }

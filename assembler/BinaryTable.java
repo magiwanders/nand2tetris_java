@@ -3,14 +3,14 @@ package assembler;
 import java.io.*;
 import java.util.*;
 
-public class Code {
+public class BinaryTable {
 
     private HashMap<String,String> compTable;
     private HashMap<String,String> compATable;
     private HashMap<String,String> destTable;
     private HashMap<String,String> jumpTable;
 
-    public Code() {
+    public BinaryTable() {
         compTable = new HashMap<String,String>();
         compATable = new HashMap<String,String>();
         destTable = new HashMap<String,String>();
