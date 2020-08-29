@@ -1,24 +1,16 @@
 package assembler;
 
-import java.io.*;
 import java.util.*;
 
 public class BinaryTable {
 
-    private HashMap<String,String> compTable;
-    private HashMap<String,String> compATable;
-    private HashMap<String,String> destTable;
-    private HashMap<String,String> jumpTable;
+    // C-instruction   ->   [destination] = [computation] ; [jump]
+    private final HashMap<String,String> compTable = new HashMap<>();  // Computation table for a = 0.
+    private final HashMap<String,String> compATable = new HashMap<>(); //                   for a = 1.
+    private final HashMap<String,String> destTable = new HashMap<>();  // Destination table
+    private final HashMap<String,String> jumpTable = new HashMap<>();  // Jump table
 
     public BinaryTable() {
-        compTable = new HashMap<String,String>();
-        compATable = new HashMap<String,String>();
-        destTable = new HashMap<String,String>();
-        jumpTable = new HashMap<String,String>();
-        initialize();
-    }
-
-    private void initialize() {
         compTable.put("0", "101010");
         compTable.put("1", "111111");
         compTable.put("-1", "111010");
@@ -68,14 +60,9 @@ public class BinaryTable {
         jumpTable.put("JMP", "111");
     }
 
-    public String comp(String comp) {
-        String toReturn;
-        boolean ais1 = comp.contains("M");
-
-        if(ais1) toReturn = "1" + compATable.get(comp);
-        else toReturn = "0" + compTable.get(comp);
-
-        return toReturn;
+    public String comp(String comp) { // Returns the binary code of a computation comp (acccccc)
+        if (comp.contains("M")) return "1" + compATable.get(comp);
+        return "0" + compTable.get(comp);
     }
 
     public String dest(String dest) {

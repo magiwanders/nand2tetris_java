@@ -52,14 +52,14 @@ public class Gui extends Stage {
         vmcode = new HBox();
           label2 = new Label("VMCode:        ");
           textField2 = new TextField();
-          load2 = new Button("Load");
+          load2 = new Button("Load directory containing .vm files");
 
 
         translateButton = new Button("Translate");
         assembly = new HBox();
           label3 = new Label("Assembly File: ");
           textField3 = new TextField();
-          load3 = new Button("Load");
+          load3 = new Button("Load .asm file");
 
         assembleButton = new Button("Assemble");
         binary = new HBox();
@@ -72,8 +72,8 @@ public class Gui extends Stage {
 
         super.setTitle("nand2tetris");
         super.setScene(new Scene(root));
-        super.setWidth(500);
-        super.setHeight(300);
+        super.setWidth(530);
+        super.setHeight(230);
         super.show();
     }
 

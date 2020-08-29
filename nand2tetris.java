@@ -9,10 +9,6 @@ import vmtranslator.*;
 
 import javafx.application.*;
 import javafx.stage.*;
-import javafx.scene.*;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.event.* ;
 
 import java.io.*;
 
@@ -33,17 +29,26 @@ public class nand2tetris extends Application {
   }
 
   private void load2ButtonHandle() {
-    gui.getTextField2().setText(getFile());
+    gui.getTextField2().setText(getDirectory());
   }
 
   private void load3ButtonHandle() {
     gui.getTextField3().setText(getFile());
   }
 
-  private String getFile() {
+  private String getDirectory() {
     Stage stage = new Stage();
     DirectoryChooser directoryChooser = new DirectoryChooser();
+    directoryChooser.setInitialDirectory(retrieveSavedDirectory());
     File file = directoryChooser.showDialog(stage);
+    return file.getAbsolutePath();
+  }
+
+  private String getFile() {
+    Stage stage = new Stage();
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setInitialDirectory(retrieveSavedDirectory());
+    File file = fileChooser.showOpenDialog(stage);
     return file.getAbsolutePath();
   }
 
@@ -51,6 +56,7 @@ public class nand2tetris extends Application {
     String assemblyFile = gui.getTextField3().getText();
     HackAssembler assembler = new HackAssembler(assemblyFile);
     gui.getTextField4().setText(assemblyFile.replaceAll(".asm", ".hack"));
+    saveLastDirectory();
   }
 
   private void translateButtonHandle() {
@@ -64,6 +70,30 @@ public class nand2tetris extends Application {
     }
 
     assembleButtonHandle();
+  }
+
+  private void saveLastDirectory() {
+    try {
+      String basePath = new File("").getAbsolutePath();
+      PrintWriter w = new PrintWriter(new BufferedWriter(new FileWriter(new File(basePath + File.separator + "lastPath.txt"))));
+      w.println(new File(gui.getTextField4().getText()).getParent());
+      w.close();
+    } catch (Exception e)  {
+      e.printStackTrace();
+    }
+  }
+
+  private File retrieveSavedDirectory() {
+    String path = new String();
+    try {
+      String basePath = new File("").getAbsolutePath();
+      BufferedReader r = new BufferedReader(new FileReader(new File(basePath + File.separator + "lastPath.txt")));
+      path = r.readLine();
+      r.close();
+    } catch (Exception e)  {
+      e.printStackTrace();
+    }
+    return new File(path);
   }
 
   @Override
