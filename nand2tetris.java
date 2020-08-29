@@ -6,7 +6,6 @@
 import gui.Gui;
 import assembler.*;
 import vmtranslator.*;
-// import VMTranslator;
 
 import javafx.application.*;
 import javafx.stage.*;
@@ -43,8 +42,8 @@ public class nand2tetris extends Application {
 
   private String getFile() {
     Stage stage = new Stage();
-    FileChooser fileChooser = new FileChooser();
-    File file = fileChooser.showOpenDialog(stage);
+    DirectoryChooser directoryChooser = new DirectoryChooser();
+    File file = directoryChooser.showDialog(stage);
     return file.getAbsolutePath();
   }
 
@@ -57,7 +56,13 @@ public class nand2tetris extends Application {
   private void translateButtonHandle() {
     File VMFile = new File(gui.getTextField2().getText());
     CodeWriter translator = new CodeWriter(VMFile, VMFile.isDirectory());
-    gui.getTextField3().setText(VMFile.getAbsolutePath().replaceAll(".vm", ".asm"));
+    if (!VMFile.isDirectory()) {
+      gui.getTextField3().setText(VMFile.getAbsolutePath().replaceAll(".vm", ".asm"));
+    } else {
+      String filePath = VMFile.getAbsolutePath() + File.separator + VMFile.getName() + ".asm";
+      gui.getTextField3().setText(filePath);
+    }
+
     assembleButtonHandle();
   }
 

@@ -11,30 +11,73 @@ public class CodeWriter {
     private Parser parse;
     private Vector<String> program;
     private int programLength;
+
+    private String currentFile;
     private String line; // Current line.
 
+    private String lastLabel;
+
     private int lineNumber = 0;
+    private int lineWritten; // LAST RAM ADDRESS WRITTEN (does not count labels of course)
+
+    private Vector<String> programList; // List of .vm files to be transcoded
 
     public CodeWriter(File path, boolean isDirectory) {
         if (isDirectory) {
-            initializeDirectory(path);
-            for(String file : path.list()) {
-                String absoluteFilePath = path.getAbsolutePath() + File.separator + file;
-                execute(absoluteFilePath);
+            System.out.println("Directory found! It is: " + path);
+            populateProgramList(path);
+            initializeDirW(path);
+            lineWritten = -1;
+            //writeBootstrap();
+            for(int i = 0; i<programList.size(); i++) {
+                System.out.println("Starting to translate program " + (i+1) + "of" + programList.size() );
+                currentFile = programList.elementAt(i);
+                initializeDirR(path.getAbsolutePath() + File.separator + currentFile);
+                // System.out.println("Let's translate!");
+                execute();
             }
         } else {
             String file = path.getAbsolutePath();
             initializeFile(file);
-            execute(file);
+            //writeBootstrap();
+            execute();
         }
-        translateFile();
         exit();
     }
 
-    private void execute(String file) {
+    private void initializeDirW(File path) {
+        String pathFile = path.getAbsolutePath() + File.separator + path.getName() + ".asm";
+        try {
+            w = new PrintWriter(new FileWriter(new File(pathFile)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void initializeDirR(String file) {
+        try {
+            r = new BufferedReader(new FileReader(new File(file)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void populateProgramList(File path) {
+        String [] allFiles = path.list();
+        programList = new Vector<>();
+        for (String file : allFiles) {
+            if (file.endsWith(".vm")) {
+                programList.addElement(file);
+                System.out.println(file + " added.");
+            }
+        }
+    }
+
+    private void execute() {
         parse = new Parser();
         program = new Vector<String>();
         loadFile(); // Also removes spaces and comments.
+        translateFile();
     }
 
     private void initializeFile(String file) {
@@ -46,18 +89,15 @@ public class CodeWriter {
         }
     }
 
-    private void initializeDirectory(File path) {
-        String cumulativeFileName = path.getAbsolutePath() + File.separator + path.getName() + ".asm";
-        initializeFile(cumulativeFileName);
-    }
-
     private void loadFile() {
+        // System.out.println("Let's load!");
         try {
             while(true) {
                 line = r.readLine();
                 if (line == null) break; // File ended.
                 clean(); // Removes spaces and comments from each line.
                 if(!line.isEmpty()) {
+                    // System.out.println("Read:" + line);
                     program.add(line);
                 }
             }
@@ -72,6 +112,7 @@ public class CodeWriter {
     private void clean() {
         //line = line.replaceAll(" ", ""); // Removes spaces
         line = removeComments(line); // Removes comments
+        line = line.trim();
     }
 
     private String removeComments(String line) {
@@ -92,6 +133,48 @@ public class CodeWriter {
         }
     }
 
+    private void writeBootstrap() {
+        w.println("@256"); // SP=256
+        w.println("D=A");
+        w.println("@SP");
+        w.println("M=D");
+
+        w.println("@SP"); // push SP(returnAddress)
+        w.println("M=M+1"); // leave space for return argument (SP=257)
+        w.println("M=M+1"); // SP=258 with returnAddress(257) in it
+        w.println("AD=M-1"); // point 257
+        w.println("M=D"); // memorize 257 in it
+
+        w.println("@LCL"); // push LCL which is 0 in ram 258
+        simplePush();
+
+        w.println("@ARG"); // push ARG which is 0 in ram 259
+        simplePush();
+
+        w.println("@THIS"); // push THIS which is 0 in ram 260
+        simplePush();
+
+        w.println("@THAT"); // push THAT which is 0 in ram 261 (SP=262)
+        simplePush();
+
+        w.println("@SP"); // D contains SP
+        w.println("D=M");
+        w.println("@6");
+        w.println("D=D-A"); // D contains SP-6 (-5 -1 returnvalue)
+        w.println("@ARG"); // New ARG value
+        w.println("M=D");
+
+        w.println("@SP"); // LCL = SP
+        w.println("D=M");
+        w.println("@LCL");
+        w.println("M=D");
+
+        w.println("@Sys.init");
+        w.println("0;JEQ");
+
+        w.println("(Sys.init$returnAddress)"); // Writes label name
+    }
+
     private void translateLine() {
         w.println("//" + line);
         switch(parse.commandType(line)) {
@@ -99,7 +182,7 @@ public class CodeWriter {
             case "B": writeB(); break; // B is MEMORY SEGMENT command
             case "C": writeC(); break; // C is BRANCHING command
             case "D": writeD(); break; // D is FUNCTION command
-            default: break;
+            default: System.out.println("ERROR"); break;
         }
     }
 
@@ -128,7 +211,7 @@ public class CodeWriter {
     }
 
     private void writeApost() {
-      w.println("@SP"); // in case it doesn't jump, it has to write false
+      w.println("@SP"); // in case it doesn't jump, it has to w.println false
       w.println("A=M-1"); // last element of stack
       w.println("M=0"); // sets it to FALSE
       w.println("@END_" + lineNumber); // points to the end
@@ -315,6 +398,7 @@ public class CodeWriter {
 
     private void writeClabel() {
         w.println("(" + parse.arg2(line) + ")"); // Writes label name
+        // SOME USE write() and SOME w.println() because labels are removed and do not occupy a part of RAM
     }
 
     private void writeCifgoto() {
@@ -342,15 +426,12 @@ public class CodeWriter {
     }
 
     private void writeDcall() {
-        w.println("@SP"); // push SP(returnAddress) and save SP (future SP-5) in general purpose register R14 and nArgs in R15
-        w.println("M=M+1");
-        w.println("AD=M-1");
-        w.println("M=D");
-        w.println("@R14");
-        w.println("M=D");
-        w.println("@" + parse.arg3(line));
+        w.println("@" + parse.arg2(line) + "$returnAddress");
         w.println("D=A");
-        w.println("@R15");
+
+        w.println("@SP");
+        w.println("M=M+1");
+        w.println("A=M-1");
         w.println("M=D");
 
         w.println("@LCL"); // push LCL
@@ -365,14 +446,13 @@ public class CodeWriter {
         w.println("@THAT"); // push THAT
         simplePush();
 
-        w.println("@LCL"); // push LCL
-        simplePush();
-
-        w.println("@R14"); // ARG = SP-5-nArgs ("SP-5" is in gen.pur.register R14 and nArgs in R15)
+        w.println("@SP"); // D contains SP
         w.println("D=M");
-        w.println("@R15");
-        w.println("D=D-M"); // (SP-5)-nArgs
-        w.println("@ARG");
+        w.println("@5");
+        w.println("D=D-A"); // D contains SP-5
+        w.println("@" + parse.arg3(line));
+        w.println("D=D-A"); // D contains (SP-5)-nArgs
+        w.println("@ARG"); // New ARG value
         w.println("M=D");
 
         w.println("@SP"); // LCL = SP
@@ -380,15 +460,10 @@ public class CodeWriter {
         w.println("@LCL");
         w.println("M=D");
 
-        String originalLine = line;
-        String functionName = parse.arg2(line); // goto functionName
-        line = "goto " + functionName;
-        translateLine();
+        w.println("@" + parse.arg2(line));
+        w.println("0;JEQ");
 
-        line = "label " + functionName + "$returnAddress";
-        translateLine();
-
-        line = originalLine;
+        w.println("(" +  parse.arg2(line) + "$returnAddress" + ")"); // Writes label name
     }
 
     private void simplePush() {
@@ -400,20 +475,16 @@ public class CodeWriter {
     }
 
     private void writeDreturn() {
-        w.println("@LCL"); // LCL saved to endframe (gen.pur.register R15)
-        w.println("D=M");
-        w.println("@R15");
+        w.println("@LCL"); // N.B. ReturnAddress is the value of SP after the function has returned
+        w.println("D=M"); // D contains pointer to LCL
+        w.println("@R15"); // Save LCL to R15(endframe)
         w.println("M=D");
-
-        w.println("M=M-1"); // enframe-5
-        w.println("M=M-1");
-        w.println("M=M-1");
-        w.println("M=M-1");
-        w.println("MD=M-1");
-
-        // get returnAddress as endframe-5 = LCL-5
-        w.println("@R14"); // save it to R14
-        w.println("M=D-1");
+        w.println("@5"); // Actually compute LCL-5
+        w.println("D=D-A"); // D points LCL-5
+        w.println("A=D");
+        w.println("D=M"); // Gets content of returnAddress
+        w.println("@R14"); // Saves it to R14
+        w.println("M=D");
 
         w.println("@SP"); // pop returnValue(last element of the stack) to *ARG (arg zero)
         w.println("M=M-1");
@@ -423,37 +494,46 @@ public class CodeWriter {
         w.println("A=M");
         w.println("M=D");
 
-        w.println("@R15"); // LCL = endframe-4
-        w.println("AMD=M+1");
+        w.println("@ARG"); // SP=ARG+1
         w.println("D=M");
-        w.println("@LCL");
-        w.println("M=D");
+        w.println("@SP");
+        w.println("M=D+1");
 
-        w.println("@R15"); // ARG = endframe-3
-        w.println("AMD=M+1");
-        w.println("D=M");
-        w.println("@ARG");
-        w.println("M=D");
-
-        w.println("@R15"); // THIS = endframe-2
-        w.println("AMD=M+1");
-        w.println("D=M");
-        w.println("@THIS");
-        w.println("M=D");
-
-        w.println("@R15"); // THAT = endframe-1
-        w.println("AMD=M+1");
-        w.println("D=M");
+        w.println("@R15"); // reinstate old THAT
+        w.println("M=M-1");
+        w.println("A=M"); // points saved THAT
+        w.println("D=M"); // D contains saved THAT value
         w.println("@THAT");
         w.println("M=D");
 
-        w.println("@R14"); // goto return address stored in R14
-        w.println("D=M");
-        w.println("@SP");
+        w.println("@R15"); // reinstate old THIS
+        w.println("M=M-1"); // now R15 contains pointer to saved ARG
+        w.println("A=M"); // points saved THIS
+        w.println("D=M"); // D contains saved THIS value
+        w.println("@THIS");
         w.println("M=D");
+
+        w.println("@R15"); // reinstate old ARG
+        w.println("M=M-1"); // now R15 contains pointer to saved LCL
+        w.println("A=M"); // points saved ARG
+        w.println("D=M"); // D contains saved ARG value
+        w.println("@ARG");
+        w.println("M=D");
+
+        w.println("@R15"); // reinstate old LCL
+        w.println("M=M-1");
+        w.println("A=M"); // points saved LCL
+        w.println("D=M"); // D contains saved LCL value
+        w.println("@LCL");
+        w.println("M=D");
+
+        w.println("@R14");
+        w.println("A=M");
+        w.println("0;JEQ");
     }
 
     private void writeDfunction() {
+        lastLabel = parse.arg2(line);
         w.println("(" + parse.arg2(line) + ")");
         String originalLine = line;
         int args = Integer.parseInt(parse.arg3(line));
@@ -463,8 +543,6 @@ public class CodeWriter {
         }
         line = originalLine;
     }
-
-
 
     public void exit() {
         try{

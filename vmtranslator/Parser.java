@@ -6,7 +6,7 @@ import java.util.*;
 public class Parser {
 
     public String commandType(String line) {
-        System.out.println("Parsing: " + line);
+        System.out.println("Parsing: '" + line + "'");
         if (isA(line)) return "A";
         if (line.equals("return")) return "D";
         String identifier = line.substring(0, line.indexOf(" "));
