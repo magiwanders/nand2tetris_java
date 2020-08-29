@@ -18,6 +18,7 @@ public class CodeWriter {
     private String lastLabel;
 
     private int lineNumber = 0;
+    private int nestedCallNumber = 0;
     private int lineWritten; // LAST RAM ADDRESS WRITTEN (does not count labels of course)
 
     private Vector<String> programList; // List of .vm files to be transcoded
@@ -28,7 +29,7 @@ public class CodeWriter {
             populateProgramList(path);
             initializeDirW(path);
             lineWritten = -1;
-            //writeBootstrap();
+            writeBootstrap();
             for(int i = 0; i<programList.size(); i++) {
                 System.out.println("Starting to translate program " + (i+1) + "of" + programList.size() );
                 currentFile = programList.elementAt(i);
@@ -39,7 +40,7 @@ public class CodeWriter {
         } else {
             String file = path.getAbsolutePath();
             initializeFile(file);
-            //writeBootstrap();
+            writeBootstrap();
             execute();
         }
         exit();
@@ -139,35 +140,42 @@ public class CodeWriter {
         w.println("@SP");
         w.println("M=D");
 
-        w.println("@SP"); // push SP(returnAddress)
-        w.println("M=M+1"); // leave space for return argument (SP=257)
-        w.println("M=M+1"); // SP=258 with returnAddress(257) in it
-        w.println("AD=M-1"); // point 257
-        w.println("M=D"); // memorize 257 in it
+        //line = "call Sys.0nit 0";
+        //translateLine();
 
-        w.println("@LCL"); // push LCL which is 0 in ram 258
+        //w.println("@Sys.init$returnAddress");
+        //w.println("D=A");
+
+        w.println("@SP");
+        w.println("M=M+1");
+        //w.println("A=M-1");
+        //w.println("M=D");
+
+        w.println("@LCL"); // push LCL
         simplePush();
 
-        w.println("@ARG"); // push ARG which is 0 in ram 259
+        w.println("@ARG"); // push ARG
         simplePush();
 
-        w.println("@THIS"); // push THIS which is 0 in ram 260
+        w.println("@THIS"); // push THIS
         simplePush();
 
-        w.println("@THAT"); // push THAT which is 0 in ram 261 (SP=262)
+        w.println("@THAT"); // push THAT
         simplePush();
 
-        w.println("@SP"); // D contains SP
-        w.println("D=M");
-        w.println("@6");
-        w.println("D=D-A"); // D contains SP-6 (-5 -1 returnvalue)
-        w.println("@ARG"); // New ARG value
-        w.println("M=D");
+        //w.println("@SP"); // D contains SP
+        //w.println("D=M");
+        //w.println("@5");
+        //w.println("D=D-A"); // D contains SP-5
+        //w.println("@" + parse.arg3(line));
+        //w.println("D=D-A"); // D contains (SP-5)-nArgs
+        //w.println("@ARG"); // New ARG value
+        //w.println("M=D");
 
-        w.println("@SP"); // LCL = SP
-        w.println("D=M");
-        w.println("@LCL");
-        w.println("M=D");
+        //w.println("@SP"); // LCL = SP
+        //w.println("D=M");
+        //w.println("@LCL");
+        //w.println("M=D");
 
         w.println("@Sys.init");
         w.println("0;JEQ");
@@ -426,7 +434,7 @@ public class CodeWriter {
     }
 
     private void writeDcall() {
-        w.println("@" + parse.arg2(line) + "$returnAddress");
+        w.println("@" + parse.arg2(line) + "_call." + nestedCallNumber + "_" + "$returnAddress");
         w.println("D=A");
 
         w.println("@SP");
@@ -463,7 +471,8 @@ public class CodeWriter {
         w.println("@" + parse.arg2(line));
         w.println("0;JEQ");
 
-        w.println("(" +  parse.arg2(line) + "$returnAddress" + ")"); // Writes label name
+        w.println("(" +  parse.arg2(line) + "_call." + nestedCallNumber + "_" + "$returnAddress" + ")"); // Writes label name
+        nestedCallNumber++;
     }
 
     private void simplePush() {
