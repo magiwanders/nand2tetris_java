@@ -304,12 +304,12 @@ public class CodeWriter {
         case "this": w.println("@THIS"); w.println("D=M");break;
         case "that": w.println("@THAT"); w.println("D=M");break;
         case "constant": writeBpushConstant(); break;
-        case "static": w.println("@16"); w.println("D=A");break;
+        case "static": writeBpushStatic();break;
         case "pointer": writeBpushPointer(); break;
         case "temp": w.println("@5"); w.println("D=A");break;
         default: break;
       }
-      if (arg2.equals("constant") || arg2.equals("pointer")) return;
+      if (arg2.equals("constant") || arg2.equals("pointer") || arg2.equals("static")) return;
       else writeBfinal();
     }
 
@@ -324,7 +324,7 @@ public class CodeWriter {
       w.println("M=D"); // D contains the value to be pushed
     }
 
-    private void  writeBpushConstant() {
+    private void writeBpushConstant() {
       w.println("@" + parse.arg3(line));
       w.println("D=A");
       w.println("@SP");
@@ -334,7 +334,7 @@ public class CodeWriter {
       w.println("M=M+1"); // Increments SP
     }
 
-    private void  writeBpushPointer() {
+    private void writeBpushPointer() {
       switch (parse.arg3(line)) {
         case "0": w.println("@3"); break;
         case "1": w.println("@4"); break;
@@ -347,6 +347,15 @@ public class CodeWriter {
       w.println("M=D");
     }
 
+    private void writeBpushStatic() {
+        w.println("@" + currentFile + "." + parse.arg3(line));
+        w.println("D=M"); // Put local @offset in D
+        w.println("@SP");
+        w.println("M=M+1"); // Increments SP
+        w.println("A=M-1");
+        w.println("M=D"); // D contains the value to be pushed
+    }
+
     private void writeBpop() {
       boolean pointer = false;
       switch(parse.arg2(line)) { // wether is local, argument, this, that, constant, static, pointer, temp
@@ -354,13 +363,27 @@ public class CodeWriter {
         case "argument": w.println("@ARG"); w.println("D=M"); break;
         case "this": w.println("@THIS"); w.println("D=M"); break;
         case "that": w.println("@THAT"); w.println("D=M"); break;
-        case "static": w.println("@16"); w.println("D=A"); break;
+        case "static": writeBpopStatic(); pointer = true; break;
         case "pointer": { writeBpopPointer(); pointer = true; break;}
         case "temp": w.println("@5"); w.println("D=A"); break;
         default: break;
       }
       if (pointer) return;
       else writeBpopFinal();
+    }
+
+    private void writeBpopStatic() {
+        w.println("@" + currentFile + "." + parse.arg3(line));
+        w.println("D=A");
+        w.println("@R13");
+        w.println("M=D");
+        w.println("@SP");
+        w.println("M=M-1");
+        w.println("A=M");
+        w.println("D=M");
+        w.println("@R13");
+        w.println("A=M");
+        w.println("M=D");
     }
 
     private void writeBpopFinalPrimer() {
