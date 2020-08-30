@@ -22,32 +22,60 @@ public class nand2tetris extends Application {
     gui.getLoad3Button().setOnAction( e -> load3ButtonHandle() );
     gui.getAssembleButton().setOnAction( e -> assembleButtonHandle() );
     gui.getTranslateButton().setOnAction( e -> translateButtonHandle() );
+    gui.getTextField1().textProperty().addListener((obs, oldText, newText) -> resetOuputFields());
+    gui.getTextField2().textProperty().addListener((obs, oldText, newText) -> resetOuputFields());
+    gui.getTextField3().textProperty().addListener((obs, oldText, newText) -> resetOuputFields());
+  }
+
+  private void resetOuputFields() {
+    gui.getTextField4().setText("");
+    gui.getErrorLabel().setText("");
   }
 
   private void load1ButtonHandle() {
-    gui.getTextField1().setText(getFile());
+    gui.getTextField1().setText(getJackFile());
   }
 
   private void load2ButtonHandle() {
-    gui.getTextField2().setText(getDirectory());
+    gui.getTextField2().setText(getVMDirectory());
   }
 
   private void load3ButtonHandle() {
-    gui.getTextField3().setText(getFile());
+    gui.getTextField3().setText(getAsmFile());
   }
 
-  private String getDirectory() {
+  private String getJackFile() {
+    return "";
+  }
+
+  private String getVMDirectory() {
     Stage stage = new Stage();
     DirectoryChooser directoryChooser = new DirectoryChooser();
     directoryChooser.setInitialDirectory(retrieveSavedDirectory());
-    File file = directoryChooser.showDialog(stage);
-    return file.getAbsolutePath();
+    File directory = directoryChooser.showDialog(stage);
+    if (!containsVMFile(directory)) {
+      gui.getErrorLabel().setText("ERROR: Chosen directory does not contain any .vm file.");
+      return "";
+    }
+    return directory.getAbsolutePath();
   }
 
-  private String getFile() {
+  private boolean containsVMFile(File directory) {
+    String [] files = directory.list();
+    if (files != null) {
+      for(String file : files) {
+        if (file.contains(".vm")) return true;
+      }
+    }
+    return false;
+  }
+
+  private String getAsmFile() {
     Stage stage = new Stage();
     FileChooser fileChooser = new FileChooser();
     fileChooser.setInitialDirectory(retrieveSavedDirectory());
+    FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Assembly files (*.asm)", "*.asm");
+    fileChooser.getExtensionFilters().add(extFilter);
     File file = fileChooser.showOpenDialog(stage);
     return file.getAbsolutePath();
   }
@@ -84,7 +112,7 @@ public class nand2tetris extends Application {
   }
 
   private File retrieveSavedDirectory() {
-    String path = new String();
+    String path = "";
     try {
       String basePath = new File("").getAbsolutePath();
       BufferedReader r = new BufferedReader(new FileReader(new File(basePath + File.separator + "lastPath.txt")));
