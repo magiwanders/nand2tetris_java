@@ -135,6 +135,8 @@ public class Gui extends Stage {
       return translateButton;
     }
 
+    public Button getCompileButton() { return compileButton; }
+
     public Label getErrorLabel() { return errorLabel;}
 
 }
