@@ -1,2 +1,8 @@
 VM Options:
 --module-path ${PATH_TO_FX} --add-modules=javafx.controls,javafx.fxml
+
+With terminal:
+// From nand2tetris_java folder
+// export PATH_TO_FX=secondaprovainitinere/src/javafx/lib
+// javac --module-path $PATH_TO_FX --add-modules javafx.controls nand2tetris.java
+// java --module-path $PATH_TO_FX --add-modules javafx.controls nand2tetris
