@@ -61,7 +61,7 @@ public class CodeWriter {
         w.println("@256"); // SP=256
         w.println("D=A");
         w.println("@SP");
-        w.println("M=D");////////////////////////Non fovrebbe esserci un return address e nuovi ARG/LCL
+        w.println("M=D");
 
         w.println("@SP"); // Leave space for return address.
         w.println("M=M+1");
