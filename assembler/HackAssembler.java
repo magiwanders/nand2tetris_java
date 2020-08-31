@@ -1,3 +1,9 @@
+/*
+
+ HACK ASSEMBLER - translates assembly (foo.asm) into Hack machine language (foo.hack).
+
+*/
+
 package assembler;
 
 import java.io.*;
@@ -5,25 +11,44 @@ import java.util.*;
 
 public class HackAssembler {
 
+    // In order to read the .asm file and write to the .hack file
     private BufferedReader r;
     private PrintWriter w;
-    private SymbolTable symbolTable;
-    private Parser parse;
-    private Code translate;
-    private Vector<String> program;
-    private int programLength;
-    private String line; // Current line.
 
-    private static String assemblyFile;
+    // The three other components of the assembler
+    private final SymbolTable symbolTable = new SymbolTable(); // Contains the mapping of symbolic references (predefined symbols, labels, static variables). Used for A-instructions.
+    private final AssemblyParser parse = new AssemblyParser(); // Decomposes each assembly instruction and retrieves its various parts.
+    private final BinaryTable translate = new BinaryTable();   // Contains the mapping of each part of a C-instruction with the corresponding binary code.
+
+    // Loaded file internal representation.
+    private static String assemblyFile;                    // Contains the full path of the .asm file
+    private final Vector<String> program = new Vector<>(); // Contains the entire .asm file inside the program, in order to easily double-pass it.
+    private String line;                                   // Current line being processed.
+
 
     public HackAssembler(String file) {
         assemblyFile = file;
-        symbolTable = new SymbolTable();
-        parse = new Parser();
-        translate = new Code();
-        program = new Vector<String>();
+
+        loadFile();   // Loads the .asm file into "program" Vector<String>
+        firstPass();  // First pass, loads labels.
+        secondPass(); // Second pass, loads static variables and does the actual translation.
+        exit();       // Closes r and w.
+    }
+
+
+    private void loadFile() {
         initializeIO(); // Creates reader and writer to .asm and .hack files respectively.
-        execute();
+        try {
+            // Cycle the .asm file line by line and load it into "program" Vector<String>.
+            while(true) {
+                line = r.readLine();
+                if (line == null) break;               // File ended, exit the while.
+                clean();                               // Removes spaces and comments from each line.
+                if(!line.isEmpty()) program.add(line); // Removes empty lines
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initializeIO() {
@@ -31,113 +56,73 @@ public class HackAssembler {
             r = new BufferedReader(new FileReader(new File(assemblyFile)));
             w = new PrintWriter(new FileWriter(new File(assemblyFile.replaceAll(".asm", ".hack"))));
         } catch (Exception e) {
-            e.printStackTrace(); 
-        }
-    }
-
-    private void execute() {
-        loadFile(); // Also removes spaces and comments.
-        scanLabels();
-        finalScan();
-        exit();
-    }
-
-    private void loadFile() {
-        try {
-            while(true) {
-                line = r.readLine();
-                if (line == null) break; // File ended.
-                clean(); // Removes spaces and comments from each line.
-                if(!line.isEmpty() && line != null) {
-                    program.add(line);
-                }
-            }
-
-            programLength = program.size();
-
-            printProgram("After loadFile()");
-
-        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void clean() {
-        if(line.equals(null)) return; // Ya never know.
-        line = line.replaceAll(" ", ""); // Removes spaces
-        line = removeComments(line); // Removes comments
+        line = line.replaceAll(" ", ""); // Removes spaces.
+        line = removeComments(line);                      // Removes comments.
     }
 
     private String removeComments(String line) {
         int index = line.indexOf("//");
-
-        if(index != -1) { // In case there is a commment.
-            line = line.substring(0, index);
-        }
-
+        if(index != -1) line = line.substring(0, index); // In case there is a comment, it trims it out.
         return line;
     }
 
-    private void scanLabels() {
-        String label;
-        int index1, index2;
-
-        for(int i=0; i<programLength; i++) {
+    private void firstPass() {
+        for(int i=0; i<program.size(); i++) {
             line = program.elementAt(i);
-
-            index1 = line.indexOf("(");
-            index2 = line.indexOf(")");
-
-            if(index1 != -1 && index2 != -1) { // Se c'è una parentesi
-                label = line.substring(index1+1, index2);
-                symbolTable.add(label, i); // Gli assegno la linea della label perchè toglierò quest'ultima e l'istruzione successiva prenderà il suo posto.
-                System.out.println("i="+i+" Trovata label: "+label+". Memorizzata in: " + (i));
-                program.removeElementAt(i);
-                i--; // Torna indietro perchè ho tolto la linea corrispondente alla label.
-                programLength = program.size();
+            int index1 = line.indexOf("(");
+            int index2 = line.indexOf(")");
+            if(index1 != -1 && index2 != -1) {                     // If I find a label (there are parentheses)
+                String label = line.substring(index1 + 1, index2); // Get the name of the label trimming out the parentheses.
+                symbolTable.add(label, i);                         // The label gets mapped to its own line number, because after the removal of the label line, it will be the line of the first instruction after the label.
+                program.removeElementAt(i);                        // Removes label line.
+                i--;                                               // I have to re-analyze the same line because it now contains the next instruction after the label.
             }
         }
-
-        printProgram("After scanLabels()");
     }
 
-    private void finalScan() {
-        for(int i=0; i<programLength; i++) {
+    private void secondPass() {
+        for(int i=0; i<program.size(); i++) {
             line = program.elementAt(i);
-            if(line.indexOf("(")!=0) {
-                if(line.indexOf("@") == 0) handleAInstruction();
-                else handleCInstruction();
-            }
+            if (line.indexOf("@") == 0) handleAInstruction(); // Distinguishes between A-instruction and C-instruction.
+            else handleCInstruction();
         }
-
-        printProgram("After finalScan()");
     }
 
-    private void handleAInstruction() { // @value
-        String valueString = parse.AInstructionInt(line);
+    private void handleAInstruction() { // @value -> 0xxxxxxxxxxxxxxx where '0' identifies the A-instruction and xxxxxxxxxxxxxxx the relative value (address)
         int value;
+        String valueString = parse.AInstructionInt(line);
+        if (isNumber(valueString)) value = Integer.parseInt(valueString); // Just extracts the value number if "value" is not a variable.
+        else value = symbolTable.retrieveValue(valueString);                          // Returns the cell memory number assigned to the variable, whether it is an old or novel variable. If it is just a
 
-        try {
-            value = Integer.parseInt(valueString);
-        } catch (NumberFormatException e) { // It is a variable.
-            value = symbolTable.retrieveValue(valueString);
-        }
-
-        String binaryValue = Integer.toBinaryString(value);
-        for(int i=0; binaryValue.length()<16; i++) {binaryValue = "0" + binaryValue;}
+        String binaryValue = Integer.toBinaryString(value); // Takes for granted that no addresses greater than 15-bit are even written and translates to binary.
+        while (binaryValue.length()<16) binaryValue = "0" + binaryValue; // The final result is just the binary version of 'value' with enough zeros before it to make it 16-bit.
         w.println(binaryValue);
     }
 
-    private void handleCInstruction() { // dest = comp ; jump
+    private void handleCInstruction() { // dest = comp ; jump   ->   111accccccdddjjj is the binary structure of a C-instruction
         String dest = parse.dest(line);
         String comp = parse.comp(line);
         String jump = parse.jump(line);
-        System.out.println("Trovata istruzione | " +dest+"="+comp+";"+jump);
+
         String acccccc = translate.comp(comp);
         String ddd = translate.dest(dest);
         String jjj = translate.jump(jump);
 
-        w.println("111" + acccccc + ddd + jjj);
+        w.println("111" + acccccc + ddd + jjj); // Composes the binary instruction
+    }
+
+    public boolean isNumber(String valueString) {
+        try {
+            Integer.parseInt(valueString);
+        } catch (NumberFormatException e) { // If it isn't a number, it is a variable.
+            return false;
+        }
+        return true;
     }
 
     public void exit() {
@@ -148,13 +133,5 @@ public class HackAssembler {
             e.printStackTrace();
         }
     }
-
-    private void printProgram(String caller) {
-        System.out.println( "[" + caller + "] Corrente stato interno del programma: ");
-        for(int i=0; i<programLength; i++) {
-            System.out.println(program.elementAt(i));
-        }
-    }
-
 
 }

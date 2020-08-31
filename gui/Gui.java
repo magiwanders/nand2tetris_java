@@ -1,42 +1,40 @@
 package gui;
 
-import javafx.application.*;
 import javafx.stage.*;
 import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.event.* ;
 
 public class Gui extends Stage {
 
-  private VBox root;
+  private final VBox root;
 
-    private HBox jackFile;
-      private Label label1;
-      private TextField textField1;
-      private Button load1;
+    private final HBox jackFile;
+      private final Label label1;
+      private final TextField textField1;
+      private final Button load1;
 
-    private Button compileButton;
+    private final Button compileButton;
 
-    private HBox vmcode;
-      private Label label2;
-      private TextField textField2;
-      private Button load2;
+    private final HBox vmcode;
+      private final Label label2;
+      private final TextField textField2;
+      private final Button load2;
 
-    private Button translateButton;
+    private final Button translateButton;
 
-    private HBox assembly;
-      private Label label3;
-      private TextField textField3;
-      private Button load3;
+    private final HBox assembly;
+      private final Label label3;
+      private final TextField textField3;
+      private final Button load3;
 
-    private Button assembleButton;
+    private final Button assembleButton;
 
-    private HBox binary;
-      private Label label4;
-      private TextField textField4;
+    private final HBox binary;
+      private final Label label4;
+      private final TextField textField4;
 
-    private Label errorLabel;
+    private final Label errorLabel;
 
     public Gui() {
         super();
@@ -52,14 +50,14 @@ public class Gui extends Stage {
         vmcode = new HBox();
           label2 = new Label("VMCode:        ");
           textField2 = new TextField();
-          load2 = new Button("Load");
-
+          load2 = new Button("Load directory containing .vm files");
 
         translateButton = new Button("Translate");
+
         assembly = new HBox();
           label3 = new Label("Assembly File: ");
           textField3 = new TextField();
-          load3 = new Button("Load");
+          load3 = new Button("Load .asm file");
 
         assembleButton = new Button("Assemble");
         binary = new HBox();
@@ -72,8 +70,8 @@ public class Gui extends Stage {
 
         super.setTitle("nand2tetris");
         super.setScene(new Scene(root));
-        super.setWidth(500);
-        super.setHeight(300);
+        super.setWidth(530);
+        super.setHeight(250);
         super.show();
     }
 
@@ -136,5 +134,9 @@ public class Gui extends Stage {
     public Button getTranslateButton() {
       return translateButton;
     }
+
+    public Button getCompileButton() { return compileButton; }
+
+    public Label getErrorLabel() { return errorLabel;}
 
 }

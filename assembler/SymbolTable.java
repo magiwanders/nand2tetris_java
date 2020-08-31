@@ -1,20 +1,14 @@
 package assembler;
 
-import java.io.*;
 import java.util.*;
 
 public class SymbolTable {
 
-    private HashMap<String,String> symbolTable;
-    private int memoryCell;
+    // THE NUMBER MAPPED MEANS DIFFERENT THINGS. In case of a label, the number associated to it is the ROM memory cell to point when jumping to the label. For predefined symbols and variables it is the RAM memory cell containing the predefined symbol's/variable's value.
+    private final HashMap<String,String> symbolTable = new HashMap<>(); // Contains mapping of all predefined symbols, labels, and static variables.
+    private int memoryCell = 16;                                        // 16 is the first available static memory cell. As the new variables come in, this value is obviously incremented and represents the first free static segment memory cell.
 
-    public SymbolTable() {
-        symbolTable = new HashMap<String,String>();
-        memoryCell = 16;
-        initialize();
-    }
-
-    private void initialize() {
+    public SymbolTable() { // Puts in the predefined symbols.
         symbolTable.put("R0", "0");
         symbolTable.put("R1", "1");
         symbolTable.put("R2", "2");
@@ -42,18 +36,14 @@ public class SymbolTable {
         symbolTable.put("THAT", "4");
     }
 
-    public void add(String symbol, int v) {
-        Integer value = new Integer(v);
-        String valueString = value.toString();
-
-        symbolTable.put(symbol, valueString);
+    public void add(String symbol, int value) {
+        symbolTable.put(symbol, Integer.valueOf(value).toString());
     }
 
-    public int retrieveValue(String valueString) {
-        if(symbolTable.containsKey(valueString)) return Integer.parseInt(symbolTable.get(valueString));
-        add(valueString, memoryCell);
-        memoryCell++;
-        return memoryCell-1;
+    public int retrieveValue(String valueString) { // Retrieves the value corresponding to a predefined symbol, label or variable.
+        if(symbolTable.containsKey(valueString)) return Integer.parseInt(symbolTable.get(valueString)); // In case it is already mapped, it just retrieves it.
+        add(valueString, memoryCell); // In case it is new (this only happens with variables since all labels have been mapped during firstPass), just memorizes it to the next available static memory cell.
+        memoryCell++;                 // Increments to point the new first free memory cell.
+        return memoryCell-1;          // Returns the value that has just been assigned.
     }
-
 }
