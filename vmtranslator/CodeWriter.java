@@ -1,6 +1,9 @@
 /*
 
  CODE WRITER - translates VM Code (foo.vm) into assembly language (foo.asm). It can translate more than one .vm file into one .asm file.
+             - it uses R13 to momentarily memorize the address of the memory segment to pop to.
+                       R14 to momentarily memorize returnAddress duning return.
+                       R15 to momentarily memorize LCL during return.
 
 */
 
@@ -63,17 +66,7 @@ public class CodeWriter {
         w.println("@SP"); // Leave space for return address.
         w.println("M=M+1");
 
-        w.println("@LCL"); // push LCL
-        simplePush();
-
-        w.println("@ARG"); // push ARG
-        simplePush();
-
-        w.println("@THIS"); // push THIS
-        simplePush();
-
-        w.println("@THAT"); // push THAT
-        simplePush();
+        callBody("0");
 
         w.println("@Sys.init");
         w.println("0;JEQ");
@@ -139,6 +132,11 @@ public class CodeWriter {
             case "D": writeD(); break; // D is FUNCTION command
             default: System.out.println("ERROR"); break;
         }
+    }
+
+    private void translateLine(String line) {
+        this.line = line;
+        translateLine();
     }
 
     private void writeA() { // ARITHMETIC/LOGIC command.
@@ -242,8 +240,7 @@ public class CodeWriter {
     }
 
     private void writeBpush() {
-      String arg2 = parse.arg2(line);
-      switch(arg2) { // Whether is local, argument, this, that, constant, static, pointer, temp.
+      switch(parse.arg2(line)) { // Whether is local, argument, this, that, constant, static, pointer, temp.
         case "local": w.println("@LCL"); break;
         case "argument": w.println("@ARG"); break;
         case "this": w.println("@THIS"); break;
@@ -264,8 +261,13 @@ public class CodeWriter {
     }
 
     private void writeBpushStatic() {
-        w.println("@" + currentFileName + "." + parse.arg3(line));
-        simplePush();
+        simplePush(currentFileName + "." + parse.arg3(line));
+    }
+
+    private void simplePush(String toPush) {
+        w.println("@" + toPush);
+        w.println("D=M");
+        simplerPush();
     }
 
     private void simplePush() {
@@ -302,44 +304,41 @@ public class CodeWriter {
 
     private void writeBend() {
         w.println("@" + parse.arg3(line));
-        w.println("D=D+A"); // D = LOCAL + offset
-        w.println("A=D"); // Point to LOCAL + offset
+        w.println("D=D+A"); // D = address + offset.
+        w.println("A=D");   // Point to address + offset.
         simplePush();
     }
 
     private void writeBpop() {
-      switch(parse.arg2(line)) { // Whether is local, argument, this, that, constant, static, pointer, temp.
-        case "local": w.println("@LCL");  break;
-        case "argument": w.println("@ARG"); break;
-        case "this": w.println("@THIS"); break;
-        case "that": w.println("@THAT"); break;
-        case "static": writeBpopStatic(); return;
-        case "pointer": writeBpopPointer(); return;
-        case "temp": writeBpopTemp(); return;
-        default: break;
-      }
-      writeBpopFinal();
+        switch(parse.arg2(line)) { // Whether is local, argument, this, that, constant, static, pointer, temp.
+            case "local": w.println("@LCL");  break;
+            case "argument": w.println("@ARG"); break;
+            case "this": w.println("@THIS"); break;
+            case "that": w.println("@THAT"); break;
+            case "static": writeBpopStatic(); return;
+            case "pointer": writeBpopPointer(); return;
+            case "temp": writeBpopTemp(); return;
+            default: break;
+        }
+        writeBpopFinal();
     }
 
-    private void writeBpopStatic() {
-        w.println("@" + currentFileName + "." + parse.arg3(line));
-        w.println("D=A");
-        w.println("@R13");
-        w.println("M=D");
+    private void simplePop() { // Puts last stack value (value to be popped) into D and decreases SP.
         w.println("@SP");
         w.println("M=M-1");
         w.println("A=M");
         w.println("D=M");
-        w.println("@R13");
+    }
+
+    private void writeBpopStatic() {
+        simplePop();
+        w.println("@" + currentFileName + "." + parse.arg3(line)); // Creates new static variable. For name.asm creates name.1, name.2, name.3... as static variables.
         w.println("A=M");
         w.println("M=D");
     }
 
     private void writeBpopPointer() {
-        w.println("@SP");
-        w.println("M=M-1");
-        w.println("A=M");
-        w.println("D=M");
+        simplePop();
         switch (parse.arg3(line)) {
             case "0": w.println("@THIS"); break;
             case "1": w.println("@THAT"); break;
@@ -349,36 +348,28 @@ public class CodeWriter {
     }
 
     private void writeBpopTemp() {
-        w.println("@5");
+        w.println("@5");  // 5..12 are the memory cells reserved to TEMP.
         w.println("D=A");
         writeBpopEnd();
     }
 
-    private void writeBpopFinalPrimer() {
-      w.println("@" + parse.arg3(line));
-      w.println("D=D+A"); // Points the address to which the value will be popped.
-      w.println("@R13");
-      w.println("M=D");
-    }
-
     private void writeBpopFinal() {
-        w.println("D=M");
+        w.println("D=M");  // Gets value inside LCL/ARG/THIS/THAT.
         writeBpopEnd();
     }
 
-    private void writeBpopEnd() {
-        writeBpopFinalPrimer(); // Puts address to pop to into R13.
-        w.println("@SP");
-        w.println("M=M-1");
-        w.println("A=M");
-        w.println("D=M");
-        w.println("@R13");
+    private void writeBpopEnd() { // Operates with the starting address of the memory segment to pop to in D.
+        w.println("@" + parse.arg3(line)); // D already contains the starting address of the memory segment to pop to. Arg3 is the offset.
+        w.println("D=D+A");                // Points the actual address to which the value will be popped.
+        w.println("@R13");                 // Memorize address of memory to pop to in R13.
+        w.println("M=D");
+        simplePop();
+        w.println("@R13");                 // Puts the content od D (value to pop) into the address in R13.
         w.println("A=M");
         w.println("M=D");
     }
 
     private void writeC() {
-        System.out.println("Command type: C");
         switch(parse.arg1(line)) { // Whether is a LABEL, IF-GOTO, GOTO.
             case "label": writeClabel(); break;
             case "if-goto": writeCifgoto(); break;
@@ -392,12 +383,12 @@ public class CodeWriter {
     }
 
     private void writeCifgoto() {
-        w.println("@SP");
+        w.println("@SP");                  // Puts last element of the stack in D.
         w.println("M=M-1");
         w.println("A=M");
         w.println("D=M");
-        w.println("@" + parse.arg2(line));
-        w.println("D;JNE");
+        w.println("@" + parse.arg2(line)); // Points to the goto address.
+        w.println("D;JNE");                // Jumps if D!=0 (if last element of the stack was TRUE).
     }
 
     private void writeCgoto() {
@@ -405,9 +396,8 @@ public class CodeWriter {
         w.println("0;JEQ");
     }
 
-    private void writeD() { // Whether is a LABEL, IF-GOTO, GOTO.
-        System.out.println("Command type: D");
-        switch(parse.arg1(line)) {
+    private void writeD() {
+        switch(parse.arg1(line)) { // Whether is a FUNCTION, CALL, RETURN.
             case "function": writeDfunction(); break;
             case "call": writeDcall(); break;
             case "return": writeDreturn(); break;
@@ -416,114 +406,95 @@ public class CodeWriter {
     }
 
     private void writeDcall() {
-        w.println("@" + parse.arg2(line) + "_call." + nestedCallNumber + "_" + "$returnAddress");
+        w.println("@" + parse.arg2(line) + "_call." + nestedCallNumber + "_" + "$returnAddress"); // Pushes returnAddress of the CALLER.
         w.println("D=A");
+        simplerPush();
 
-        w.println("@SP");
-        w.println("M=M+1");
-        w.println("A=M-1");
-        w.println("M=D");
+        callBody(parse.arg3(line));
 
-        w.println("@LCL"); // push LCL
-        simplePush();
+        w.println("@" + parse.arg2(line)); // Jumps to the CALLEE, which is arg2.
+        w.println("0;JEQ");
 
-        w.println("@ARG"); // push ARG
-        simplePush();
+        w.println("(" +  parse.arg2(line) + "_call." + nestedCallNumber + "_" + "$returnAddress" + ")"); // Writes label name of the returnAddress of the current specific call of the CALLER function.
+        nestedCallNumber++;                                                                              // Increases the call number so that if the same function gets called in the future the return addresses are not confused.
+    }
 
-        w.println("@THIS"); // push THIS
-        simplePush();
+    private void callBody(String arg3) {
+        simplePush("LCL");
 
-        w.println("@THAT"); // push THAT
-        simplePush();
+        simplePush("ARG");
 
-        w.println("@SP"); // D contains SP
-        w.println("D=M");
+        simplePush("THIS");
+
+        simplePush("THAT");
+
+        w.println("@SP");                  // Repositions ARG to SP-5-nArgs.
+        w.println("D=M");                  // D contains SP
         w.println("@5");
-        w.println("D=D-A"); // D contains SP-5
-        w.println("@" + parse.arg3(line));
-        w.println("D=D-A"); // D contains (SP-5)-nArgs
-        w.println("@ARG"); // New ARG value
+        w.println("D=D-A");                // D contains SP-5.
+        w.println("@" + arg3);
+        w.println("D=D-A");                // D contains (SP-5)-nArgs.
+        w.println("@ARG");                 // Set new ARG value.
         w.println("M=D");
 
         w.println("@SP"); // LCL = SP
         w.println("D=M");
         w.println("@LCL");
         w.println("M=D");
-
-        w.println("@" + parse.arg2(line));
-        w.println("0;JEQ");
-
-        w.println("(" +  parse.arg2(line) + "_call." + nestedCallNumber + "_" + "$returnAddress" + ")"); // Writes label name.
-        nestedCallNumber++;
     }
 
     private void writeDreturn() {
-        w.println("@LCL"); // N.B. ReturnAddress is the value of SP after the function has returned
-        w.println("D=M"); // D contains pointer to LCL
-        w.println("@R15"); // Save LCL to R15(endframe)
-        w.println("M=D");
-        w.println("@5"); // Actually compute LCL-5
-        w.println("D=D-A"); // D points LCL-5
-        w.println("A=D");
-        w.println("D=M"); // Gets content of returnAddress
-        w.println("@R14"); // Saves it to R14
+        w.println("@LCL");  // Save LCL value to R15.
+        w.println("D=M");
+        w.println("@R15");
         w.println("M=D");
 
-        w.println("@SP"); // pop returnValue(last element of the stack) to *ARG (arg zero)
-        w.println("M=M-1");
-        w.println("A=M");
-        w.println("D=M");
-        w.println("@ARG");
-        w.println("A=M");
+        w.println("@5");    // Compute LCL-5, which contains the value of returnAddress.
+        w.println("D=D-A");
+        w.println("A=D");   // Points to LCL-5.
+        w.println("D=M");   // Gets its content, which is returnAddress.
+        w.println("@R14");  // Saves it to R14
         w.println("M=D");
+
+        simplerReinstate("SP", "ARG"); // Gets the last element of stack (returnValue), decreases SP and points to ARG.
+        w.println("A=M");                                // Points to ARG[0].
+        w.println("M=D");                                // Puts returnValue to ARG[0].
 
         w.println("@ARG"); // SP=ARG+1
         w.println("D=M");
         w.println("@SP");
         w.println("M=D+1");
 
-        w.println("@R15"); // reinstate old THAT
-        w.println("M=M-1");
-        w.println("A=M"); // points saved THAT
-        w.println("D=M"); // D contains saved THAT value
-        w.println("@THAT");
-        w.println("M=D");
+        simpleReinstate("R15", "THAT"); // Reinstates THAT.
 
-        w.println("@R15"); // reinstate old THIS
-        w.println("M=M-1"); // now R15 contains pointer to saved ARG
-        w.println("A=M"); // points saved THIS
-        w.println("D=M"); // D contains saved THIS value
-        w.println("@THIS");
-        w.println("M=D");
+        simpleReinstate("R15", "THIS"); // Reinstates THIS.
 
-        w.println("@R15"); // reinstate old ARG
-        w.println("M=M-1"); // now R15 contains pointer to saved LCL
-        w.println("A=M"); // points saved ARG
-        w.println("D=M"); // D contains saved ARG value
-        w.println("@ARG");
-        w.println("M=D");
+        simpleReinstate("R15", "ARG");  // Reinstates ARG.
 
-        w.println("@R15"); // reinstate old LCL
-        w.println("M=M-1");
-        w.println("A=M"); // points saved LCL
-        w.println("D=M"); // D contains saved LCL value
-        w.println("@LCL");
-        w.println("M=D");
+        simpleReinstate("R15", "LCL");  // Reinstates LCL.
 
-        w.println("@R14");
-        w.println("A=M");
-        w.println("0;JEQ");
+        w.println("@R14");  // Points to R14 which contains returnAddress.
+        w.println("A=M");   // Points to returnAddress.
+        w.println("0;JEQ"); // Jumps to returnAddress.
+    }
+
+    private void simpleReinstate(String address, String destination) {
+        simplerReinstate(address, destination); // Gets value to reinstate and points to the destination.
+        w.println("M=D");                       // Reinstates the value.
+    }
+
+    private void simplerReinstate(String address, String destination) {
+        w.println("@" + address);     // Points to the cell containing the address of the value to reinstate (usually R15 or SP).
+        w.println("M=M-1");           // Decreases it.
+        w.println("A=M");             // Points to the address.
+        w.println("D=M");             // Gets the value to reinstate.
+        w.println("@" + destination); // Points to the destination.
     }
 
     private void writeDfunction() {
-        w.println("(" + parse.arg2(line) + ")");
-        //String originalLine = line;
-        int args = Integer.parseInt(parse.arg3(line));
-        for(int i=0; i<args; i++) {
-            line = "push constant 0";
-            translateLine();
-        }
-        //line = originalLine;
+        w.println("(" + parse.arg2(line) + ")");                    // Sets label for the beginning of function. The name of the label is the same as the function.
+        int args = Integer.parseInt(parse.arg3(line));              // Retrieves number of arguments which is argument 3.
+        for(int i=0; i<args; i++) translateLine("push constant 0"); // Pushes constant 0 as many times as there are arguments.
     }
 
     public void exit() {
