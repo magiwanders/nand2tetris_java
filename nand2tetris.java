@@ -88,12 +88,12 @@ public class nand2tetris extends Application {
   }
 
   private void translateButtonHandle() {
-    File VMFile = new File(gui.getTextField2().getText());
-    CodeWriter translator = new CodeWriter(VMFile, VMFile.isDirectory());
-    if (!VMFile.isDirectory()) {
-      gui.getTextField3().setText(VMFile.getAbsolutePath().replaceAll(".vm", ".asm"));
+    File VMDirectory = new File(gui.getTextField2().getText());
+    CodeWriter translator = new CodeWriter(VMDirectory);
+    if (!VMDirectory.isDirectory()) {
+      gui.getTextField3().setText(VMDirectory.getAbsolutePath().replaceAll(".vm", ".asm"));
     } else {
-      String filePath = VMFile.getAbsolutePath() + File.separator + VMFile.getName() + ".asm";
+      String filePath = VMDirectory.getAbsolutePath() + File.separator + VMDirectory.getName() + ".asm";
       gui.getTextField3().setText(filePath);
     }
 
