@@ -33,6 +33,7 @@ public class Gui extends Stage {
     private final HBox binary;
       private final Label label4;
       private final TextField textField4;
+      private final Button execute;
 
     private final Label errorLabel;
 
@@ -63,6 +64,7 @@ public class Gui extends Stage {
         binary = new HBox();
           label4 = new Label("Binary File:   ");
           textField4 = new TextField();
+          execute = new Button("Execute on Hack Computer");
 
         errorLabel = new Label();
 
@@ -94,6 +96,7 @@ public class Gui extends Stage {
       root.getChildren().add(binary);
         binary.getChildren().add(label4);
         binary.getChildren().add(textField4);
+        binary.getChildren().add(execute);
       root.getChildren().add(errorLabel);
       errorLabel.setWrapText(true);
 
@@ -136,6 +139,8 @@ public class Gui extends Stage {
     }
 
     public Button getCompileButton() { return compileButton; }
+
+    public Button getExecuteButton() { return execute; }
 
     public Label getErrorLabel() { return errorLabel;}
 
