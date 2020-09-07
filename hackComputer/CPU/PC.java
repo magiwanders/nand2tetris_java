@@ -20,6 +20,7 @@ public class PC {
         boolean [] input = mux16.out(preinput, Gen.false16(), reset);
         register.write(input, true);
         register.update();
+        out1 = register.read();
         return out1;
     }
 

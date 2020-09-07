@@ -14,7 +14,7 @@ public class Bit {
     }
 
     public boolean read() {
-        return write(false, false);
+        return DFF;
     }
 
     public void update() {

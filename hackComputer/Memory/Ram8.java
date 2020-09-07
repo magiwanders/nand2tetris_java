@@ -38,7 +38,17 @@ public class Ram8 {
     }
 
     public boolean [] read(boolean [] address) {
-        return write(Gen.false16(), address, false);
+        boolean [] out = Gen.false16();
+        Dmux8way dmux8way = new Dmux8way();
+        if(dmux8way.a(true, address)) out = register0.read();
+        if(dmux8way.b(true, address)) out = register1.read();
+        if(dmux8way.c(true, address)) out = register2.read();
+        if(dmux8way.d(true, address)) out = register3.read();
+        if(dmux8way.e(true, address)) out = register4.read();
+        if(dmux8way.f(true, address)) out = register5.read();
+        if(dmux8way.g(true, address)) out = register6.read();
+        if(dmux8way.h(true, address)) out = register7.read();
+        return out;
     }
 
     public void update() {

@@ -4,9 +4,11 @@
 
 */
 
-import gui.Gui;
+import compiler.JackTokenizer;
+import gui.*;
 import assembler.*;
 import vmtranslator.*;
+import hackComputer.*;
 
 import javafx.application.*;
 import javafx.stage.*;
@@ -21,6 +23,7 @@ public class nand2tetrisLauncher extends Application {
     gui.getLoad1Button().setOnAction( e -> load1ButtonHandle() );
     gui.getLoad2Button().setOnAction( e -> load2ButtonHandle() );
     gui.getLoad3Button().setOnAction( e -> load3ButtonHandle() );
+    gui.getExecuteButton().setOnAction( e -> executeButtonHandle());
 
     gui.getAssembleButton().setOnAction( e -> assembleButtonHandle() );
     gui.getTranslateButton().setOnAction( e -> translateButtonHandle() );
@@ -43,13 +46,23 @@ public class nand2tetrisLauncher extends Application {
     gui.getTextField3().setText(getAsmFile());
   }
 
+  private void executeButtonHandle() {
+    if(gui.getTextField4().getText().equals("")) gui.getErrorLabel().setText("No .hack file!");
+    else {
+      HackComputerGui hackComputerGui = new HackComputerGui();
+      HackComputer hackComputer = new HackComputer(gui.getTextField4().getText(), hackComputerGui);
+    }
+  }
+
   private String getJackFile() {
-    FileChooser fileChooser = new FileChooser();                                                                           // Creates FileChooser.
-    fileChooser.setInitialDirectory(retrieveSavedDirectory());                                                             // Sets last visited directory as starting point.
-    FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Assembly files (*.jack)", "*.jack"); // Only show .asm files.
-    fileChooser.getExtensionFilters().add(extFilter);
-    File file = fileChooser.showOpenDialog(new Stage());                                                                   // Retrieves chosen file.
-    return file.getAbsolutePath();
+    DirectoryChooser directoryChooser = new DirectoryChooser();     // Creates a DirectoryChooser.
+    directoryChooser.setInitialDirectory(retrieveSavedDirectory()); // Sets it to be opened on the last opened directory.
+    File directory = directoryChooser.showDialog(new Stage());      // Retrieves the chosen directory.
+    if (!containsJackFile(directory)) {                               // If there are no .vm files gives out an error.
+      gui.getErrorLabel().setText("ERROR: Chosen directory does not contain any .jack file.");
+      return "";
+    }
+    return directory.getAbsolutePath();
   }
 
   private String getVMDirectory() {
@@ -81,6 +94,16 @@ public class nand2tetrisLauncher extends Application {
     if (files != null) {
       for(String file : files) {
         if (file.contains(".vm")) return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean containsJackFile(File directory) {
+    String [] files = directory.list();
+    if (files != null) {
+      for(String file : files) {
+        if (file.contains(".jack")) return true;
       }
     }
     return false;
@@ -121,9 +144,10 @@ public class nand2tetrisLauncher extends Application {
     }
   }
 
-
-
   private void compileButtonHandle() {
+    String JackDirectory = gui.getTextField1().getText();
+    JackTokenizer jackTokenizer = new JackTokenizer(JackDirectory);
+    saveLastDirectory();
   }
 
   private void resetOuputFields1() {

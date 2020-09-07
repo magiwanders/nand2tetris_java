@@ -27,7 +27,8 @@ public class Register {
     }
 
     public boolean [] read() {
-        return write(Gen.false16(), false);
+        boolean [] out = {bit0.read(),bit1.read(),bit2.read(),bit3.read(),bit4.read(),bit5.read(),bit6.read(),bit7.read(),bit8.read(),bit9.read(),bit10.read(),bit11.read(),bit12.read(),bit13.read(),bit14.read(),bit15.read()};
+        return out;
     }
 
     public void update() {

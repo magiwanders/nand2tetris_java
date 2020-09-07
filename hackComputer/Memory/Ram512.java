@@ -41,7 +41,19 @@ public class Ram512 {
     }
 
     public boolean [] read(boolean [] address) {
-        return write(Gen.false16(), address, false);
+        boolean [] out = Gen.false16();
+        boolean [] address012 = {address[0], address[1], address[2]};
+        boolean [] address345678 = {address[3], address[4], address[5], address[6], address[7], address[8]};
+        Dmux8way dmux8way = new Dmux8way();
+        if(dmux8way.a(true, address012)) out = ram640.read(address345678);
+        if(dmux8way.b(true, address012)) out = ram641.read(address345678);
+        if(dmux8way.c(true, address012)) out = ram642.read(address345678);
+        if(dmux8way.d(true, address012)) out = ram643.read(address345678);
+        if(dmux8way.e(true, address012)) out = ram644.read(address345678);
+        if(dmux8way.f(true, address012)) out = ram645.read(address345678);
+        if(dmux8way.g(true, address012)) out = ram646.read(address345678);
+        if(dmux8way.h(true, address012)) out = ram647.read(address345678);
+        return out;
     }
 
     public void update() {
