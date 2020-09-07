@@ -2,12 +2,16 @@ package compiler;
 
 import java.util.Vector;
 
+import utilities.Log;
 import utilities.Util;
 import utilities.Util.*;
+
+import javax.print.DocFlavor;
 
 public class JackTokenizer {
 
     private Vector<String> listOfJackFiles;
+    private String currentFile;
     private Vector<String> programLines;
     private String program;
     private String currentToken;
@@ -16,11 +20,19 @@ public class JackTokenizer {
     public JackTokenizer(String jackDirectory) {
         listOfJackFiles = Util.getFiles(jackDirectory, ".jack");
         for(String jackFile : listOfJackFiles) {
-            programLines = Util.loadFile(jackFile, ".jack", "_tokens.xml");
+            currentFile = new String();
+            programLines = new Vector<>();
+            program = new String();
+            currentToken = new String();
+            index = 0;
+            currentFile = jackFile.replaceAll(".jack", "T.xml");
+            Log.console("Processing file: " + currentFile);
+            programLines = Util.loadFile(jackFile, ".jack", "T.xml");
+            Log.console(programLines);
             program = stringify();
-            Util.write("<tokens>");
+            Util.append(currentFile, "<tokens>");
             XMLize();
-            Util.write("</tokens>");
+            Util.append(currentFile, "</tokens>");
         }
     }
 
@@ -29,14 +41,28 @@ public class JackTokenizer {
             if(program.charAt(index) == ' ') {
                 index ++;
             } else if(program.charAt(index) == '"') {
-                int secondVirgolett = program.indexOf("\"", index);
+                int secondVirgolett = program.indexOf("\"", index+1);
                 currentToken = program.substring(index + 1, secondVirgolett);
                 handle("stringConstant");
                 index = secondVirgolett + 1;
             } else if(isNumber(program.charAt(index))) {
                 int nextSpace = program.indexOf(" ", index);
                 currentToken = program.substring(index, nextSpace);
-                handle("integerConstant");
+                if (!containsMoreTokens(currentToken)) {
+                    handle("integerConstant");
+                } else {
+                    char [] currentTokenChar = currentToken.toCharArray();
+                    StringBuilder integer = new StringBuilder();
+                    for(int i=0; i<currentToken.length(); i++) {
+                        if (isSymbol(currentTokenChar[i]) || (i+1) == currentToken.length()) {
+                            handle("integerConstant", integer.toString());
+                            handle("symbol", String.valueOf(currentTokenChar[i]));
+                            integer = new StringBuilder();
+                        } else {
+                            integer.append(currentTokenChar[i]);
+                        }
+                    }
+                }
                 index = nextSpace+1;
             } else if (isSymbol(program.charAt(index))) {
                 currentToken = program.substring(index, index+1);
@@ -53,22 +79,25 @@ public class JackTokenizer {
                     char [] currentTokenChar = currentToken.toCharArray();
                     StringBuilder word = new StringBuilder();
                     for(int i=0; i<currentToken.length(); i++) {
-                        if(isLetter(currentTokenChar[i])) {
+                        if(isLetter(currentTokenChar[i])||isNumber(currentTokenChar[i])) {
                             word.append(currentTokenChar[i]);
-                        } else if (isSymbol(currentTokenChar[i])) {
+                        }
+                        if (isSymbol(currentTokenChar[i]) || (i+1) == currentToken.length()) {
                             if(isKeyword(word.toString())) {
-                                handle("keyword");
+                                handle("keyword", word.toString());
+                            } else if (isNumber(word.toString())) {
+                                handle("integerConstant", word.toString());
                             } else if (!containsMoreTokens(word.toString())) {
-                                handle("identifier");
+                                handle("identifier", word.toString());
                             }
-                            handle("symbol", String.valueOf(currentTokenChar[i]));
+                            if (isSymbol(currentTokenChar[i])) handle("symbol", String.valueOf(currentTokenChar[i]));
+                            word = new StringBuilder();
                         }
                     }
                 }
                 index = nextSpace+1;
             }
         }
-
     }
 
     private boolean isLetter(char candidate) {
@@ -135,6 +164,15 @@ public class JackTokenizer {
                 candidate == '9';
     }
 
+    private boolean isNumber(String candidate) {
+        try {
+            int candidateInt = Integer.parseInt(candidate);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private boolean containsMoreTokens(String candidate) {
         return candidate.contains("{") ||
                 candidate.contains("}") ||
@@ -186,23 +224,50 @@ public class JackTokenizer {
     }
 
     private void handle(String type, String token) {
-        Util.write("<"+ type +">" + token + "</"+ type +">");
+        if(!token.equals("")) {
+            if(type.equals("symbol")) {
+                if(token.equals("<")) token = "&lt;";
+                if(token.equals(">")) token = "&gt;";
+                if(token.equals("\"")) token = "&quot;";
+                if(token.equals("&")) token = "&amp;";
+            }
+            Util.append(currentFile,"<"+ type +"> " + token + " </"+ type +">");
+        }
     }
 
     private String stringify() {
         StringBuilder programBuilder = new StringBuilder();
         for(String line : programLines) {
-            programBuilder.append(line);
+            programBuilder.append(strategicSpace(line));
         }
         return programBuilder.toString();
     }
 
-    public boolean hasMoreTokens() {
-        return (index+1) < program.length();
+    private String strategicSpace(String line) { // Puts spaces after and before ; and before the first "
+        StringBuilder strategicLine = new StringBuilder();
+        char [] lineChar = line.toCharArray();
+        boolean foundFirstVirgolett = false;
+        for(int i=0; i<line.length(); i++) {
+            if(lineChar[i] == ';') {
+                strategicLine.append(" ");
+                strategicLine.append(String.valueOf(lineChar[i]));
+                strategicLine.append(" ");
+            } else if (lineChar[i] == '\"' && foundFirstVirgolett) {
+                strategicLine.append(String.valueOf(lineChar[i]));
+                foundFirstVirgolett = false;
+            } else if (lineChar[i] == '\"' && !foundFirstVirgolett) {
+                strategicLine.append(" ");
+                strategicLine.append(String.valueOf(lineChar[i]));
+                foundFirstVirgolett = true;
+            } else {
+                strategicLine.append(String.valueOf(lineChar[i]));
+            }
+        }
+        return strategicLine.toString();
     }
 
-    public void advance() {
-
+    public boolean hasMoreTokens() {
+        return index < program.length();
     }
 
 }

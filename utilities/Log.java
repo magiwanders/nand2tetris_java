@@ -1,5 +1,7 @@
 package utilities;
 
+import java.util.Vector;
+
 public class Log {
 
     public static String stringify(boolean [] a) {
@@ -9,6 +11,14 @@ public class Log {
             else aString += "1";
         }
         return aString;
+    }
+
+    public static void console(String message) {
+        System.out.println(message);
+    }
+
+    public static void console(Vector<String> messages) {
+        for(String message : messages) System.out.println(message);
     }
 
 }

@@ -134,10 +134,14 @@ public class nand2tetrisLauncher extends Application {
   }
 
   private void saveLastDirectory() {// Saves the folder to which the last output .hack file has been saved.
+    saveLastDirectory(gui.getTextField4().getText());
+  }
+
+  private void saveLastDirectory(String directory) {
     try {
       String basePath = new File("").getAbsolutePath();
       PrintWriter w = new PrintWriter(new BufferedWriter(new FileWriter(new File(basePath + File.separator + "lastPath.txt"))));
-      w.println(new File(gui.getTextField4().getText()).getParent());
+      w.println(new File(directory).getParent());
       w.close();
     } catch (Exception e)  {
       e.printStackTrace();
@@ -147,7 +151,8 @@ public class nand2tetrisLauncher extends Application {
   private void compileButtonHandle() {
     String JackDirectory = gui.getTextField1().getText();
     JackTokenizer jackTokenizer = new JackTokenizer(JackDirectory);
-    saveLastDirectory();
+    System.out.println("JackTokenizer returned fine");
+    saveLastDirectory(gui.getTextField1().getText());
   }
 
   private void resetOuputFields1() {
