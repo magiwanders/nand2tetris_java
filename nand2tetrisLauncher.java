@@ -4,6 +4,7 @@
 
 */
 
+import compiler.CompilationEngine;
 import compiler.JackTokenizer;
 import gui.*;
 import assembler.*;
@@ -151,7 +152,7 @@ public class nand2tetrisLauncher extends Application {
   private void compileButtonHandle() {
     String JackDirectory = gui.getTextField1().getText();
     JackTokenizer jackTokenizer = new JackTokenizer(JackDirectory);
-    System.out.println("JackTokenizer returned fine");
+    CompilationEngine compilationEngine = new CompilationEngine(JackDirectory);
     saveLastDirectory(gui.getTextField1().getText());
   }
 

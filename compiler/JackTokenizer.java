@@ -26,9 +26,9 @@ public class JackTokenizer {
             currentToken = new String();
             index = 0;
             currentFile = jackFile.replaceAll(".jack", "T.xml");
-            Log.console("Processing file: " + currentFile);
-            programLines = Util.loadFile(jackFile, ".jack", "T.xml");
-            Log.console(programLines);
+            //Log.console("Processing file: " + currentFile);
+            programLines = Util.loadFile(jackFile);
+            //Log.console(programLines);
             program = stringify();
             Util.append(currentFile, "<tokens>");
             XMLize();

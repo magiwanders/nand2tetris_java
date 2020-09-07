@@ -7,13 +7,11 @@ import java.util.Vector;
 
 public class Util {
 
-    public static Vector<String> loadFile(String fileAddress, String toReplace, String substitute) {
+    public static Vector<String> loadFile(String fileAddress) {
         Vector<String> program = new Vector<>();
-        PrintWriter w;
         BufferedReader r;
         try {
             r = new BufferedReader(new FileReader(new File(fileAddress)));
-            w = new PrintWriter(new FileWriter(new File(fileAddress.replaceAll(toReplace, substitute))));
             while(true) {
                 String line = r.readLine();
                 if(line==null) break;
@@ -26,7 +24,6 @@ public class Util {
                 if(!line.equals("")) program.add(line);
             }
             r.close();
-            w.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
