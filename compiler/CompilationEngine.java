@@ -220,32 +220,95 @@ public class CompilationEngine {
 
     private void compileExpression() {
         Util.append(currentFile, "<expression>");
-        Util.append(currentFile, "<term>");
-        dontTouchNext(); // Dummy term
-        Util.append(currentFile, "</term>");
+        compileTerm(); // dontTouchNext(); // Dummy term
         line = peekNext();
         if (isOp(line[1])) {
             dontTouchNext(); // Op
-            Util.append(currentFile, "<term>");
-            dontTouchNext(); // Dummy term
-            Util.append(currentFile, "</term>");
+            compileTerm();  // Dummy term
         }
         Util.append(currentFile, "</expression>");
     }
+
+    private void compileTerm() {
+        Util.append(currentFile, "<term>");
+        line = peekNext();
+        if (line[0].equals("integerConstant")) dontTouchNext(); // Integer
+        else if (line[0].equals("stringConstant")) dontTouchNext(); // String
+        else if (isKeywordConstant(line)) dontTouchNext(); // KeyboardConstant
+        else if (line[1].length()==1 && (line[1].charAt(0)=='~' || line[1].charAt(0)=='-')) {
+            dontTouchNext(); // UnaryOp
+            compileTerm();
+        }
+        else if (line[1].length()==1 && line[1].charAt(0)=='(') {
+            dontTouchNext(); // (
+            compileExpression();
+            dontTouchNext(); // )
+        } else if (isLetter(line[1].charAt(0)) && peekFurther().equals("[")) {
+            dontTouchNext(); // Var name
+            dontTouchNext(); // [
+            compileExpression();
+            dontTouchNext(); // ]
+        } else if (isLetter(line[1].charAt(0)) && (peekFurther().equals("(") || peekFurther().equals("."))) {
+            compileSubroutineCall();
+        } else dontTouchNext(); // Var name
+        Util.append(currentFile, "</term>");
+    }
+
+    private String peekFurther() {
+        index++;
+        String [] termoraryLine = peekNext();
+        index--;
+        return termoraryLine[1];
+    }
+
+
+    private boolean isLetter(char candidate) {
+        return candidate == 'a' || candidate == 'A' ||
+                candidate == 'b' || candidate == 'B' ||
+                candidate == 'c' || candidate == 'C' ||
+                candidate == 'd' || candidate == 'D' ||
+                candidate == 'e' || candidate == 'E' ||
+                candidate == 'f' || candidate == 'F' ||
+                candidate == 'g' || candidate == 'G' ||
+                candidate == 'h' || candidate == 'H' ||
+                candidate == 'i' || candidate == 'I' ||
+                candidate == 'j' || candidate == 'J' ||
+                candidate == 'k' || candidate == 'K' ||
+                candidate == 'l' || candidate == 'L' ||
+                candidate == 'm' || candidate == 'M' ||
+                candidate == 'n' || candidate == 'N' ||
+                candidate == 'o' || candidate == 'O' ||
+                candidate == 'p' || candidate == 'P' ||
+                candidate == 'q' || candidate == 'Q' ||
+                candidate == 'r' || candidate == 'R' ||
+                candidate == 's' || candidate == 'S' ||
+                candidate == 't' || candidate == 'T' ||
+                candidate == 'u' || candidate == 'U' ||
+                candidate == 'v' || candidate == 'V' ||
+                candidate == 'w' || candidate == 'W' ||
+                candidate == 'x' || candidate == 'X' ||
+                candidate == 'y' || candidate == 'Y' ||
+                candidate == 'z' || candidate == 'Z';
+    }
+
+    private boolean isKeywordConstant(String[] line) {
+        return line[0].equals("keyword") && (line[1].equals("true") ||
+                                             line[1].equals("false") ||
+                                             line[1].equals("null") ||
+                                             line[1].equals("this"));
+    }
+
 
     private boolean isOp(String line) {
         return line.equals("+") ||
                 line.equals("-") ||
                 line.equals("*") ||
                 line.equals("/") ||
-                line.equals("&") ||
+                line.equals("&amp;") ||
                 line.equals("|") ||
-                line.equals("<") ||
-                line.equals(">") ||
-                line.equals("=") ||
-                line.equals("~");
-
-
+                line.equals("&lt;") ||
+                line.equals("&gt;") ||
+                line.equals("=");
     }
 
     private void compileParameterList() {
