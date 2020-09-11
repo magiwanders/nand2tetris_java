@@ -6,6 +6,7 @@
 
 import compiler.CompilationEngine;
 import compiler.JackTokenizer;
+import compiler.XMLEngine;
 import gui.*;
 import assembler.*;
 import vmtranslator.*;
@@ -152,7 +153,8 @@ public class nand2tetrisLauncher extends Application {
   private void compileButtonHandle() {
     String JackDirectory = gui.getTextField1().getText();
     JackTokenizer jackTokenizer = new JackTokenizer(JackDirectory);
-    CompilationEngine compilationEngine = new CompilationEngine(JackDirectory);
+    XMLEngine xmlEngine =  new XMLEngine(JackDirectory);
+    //CompilationEngine compilationEngine = new CompilationEngine(JackDirectory);
     saveLastDirectory(gui.getTextField1().getText());
   }
 

@@ -1,5 +1,6 @@
 package utilities;
 
+import compiler.SymbolTable;
 import hackComputer.utility.Print;
 
 import java.io.*;
@@ -42,21 +43,17 @@ public class Util {
         return line;
     }
 
-    public static void append(String fileToAppendTo, String toWrite) {
-        try {
-            PrintWriter appender = new PrintWriter(new FileWriter(new File(fileToAppendTo), true));
-            appender.println(toWrite);
-            appender.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public static Vector<String> getFiles(String directory, String extension) {
         String [] allFiles = new File(directory).list();
         Vector<String> fileList = new Vector<>();
         for (String file : allFiles) if (file.endsWith(extension)) fileList.addElement(directory + File.separator + file);
         return fileList;
+    }
+
+    public static String getSimpleFileName(String file) {
+        String nameWithExtension = new File(file).getName();
+        int indexOfExtension = nameWithExtension.indexOf(".");
+        return nameWithExtension.substring(0, indexOfExtension);
     }
 
 }

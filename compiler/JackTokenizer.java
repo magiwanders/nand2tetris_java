@@ -1,5 +1,9 @@
 package compiler;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.Vector;
 
 import utilities.Log;
@@ -14,6 +18,7 @@ public class JackTokenizer {
     private String currentFile;
     private Vector<String> programLines;
     private String program;
+    private PrintWriter w;
     private String currentToken;
     private int index=0;
 
@@ -26,15 +31,27 @@ public class JackTokenizer {
             currentToken = new String();
             index = 0;
             currentFile = jackFile.replaceAll(".jack", "T.xml");
-            //Log.console("Processing file: " + currentFile);
+            //Log.console("Processing file: " + currentXMLFile);
             programLines = Util.loadFile(jackFile);
             //Log.console(programLines);
             program = stringify();
-            Util.append(currentFile, "<tokens>");
+            initializeIO(currentFile);
+            w.println("<tokens>");
             XMLize();
-            Util.append(currentFile, "</tokens>");
+            w.println("</tokens>");
+        }
+
+        w.close();
+    }
+
+    private void initializeIO(String currentXMLFile) {
+        try {
+            w = new PrintWriter(new BufferedWriter(new FileWriter(new File(currentXMLFile))));
+        } catch(Exception e) {
+            e.printStackTrace();
         }
     }
+
 
     private void XMLize() {
         while(hasMoreTokens()) {
@@ -231,7 +248,7 @@ public class JackTokenizer {
                 if(token.equals("\"")) token = "&quot;";
                 if(token.equals("&")) token = "&amp;";
             }
-            Util.append(currentFile,"<"+ type +"> " + token + " </"+ type +">");
+            w.println("<"+ type +"> " + token + " </"+ type +">");
         }
     }
 
