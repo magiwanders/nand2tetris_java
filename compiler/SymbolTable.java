@@ -67,6 +67,7 @@ public class SymbolTable {
 
     public String kindOf(String name) {
         Variable temp = table.get(name);
+        if(temp.kind.equals("field")) return "this";
         return temp.kind;
     }
 

@@ -90,23 +90,25 @@ public class CompilationEngine {
         // All the class variables are been declared, now classVariablesCounter contains exactly their number.
         subroutineTable.clear();
         String subroutine = peekNext(); index++; // "function"/"construtor"/"method"
-        if(subroutine.equals("constructor")) {
-            write("push constant " + classTable.numberOfFIELD);
-            write("call Memory.alloc 1"); // Allocates memory for the
-            write("pop pointer 0");       // Sets THIS
-        }
         peekNext(); index++; // type/"void"
         String subroutineName = peekNext(); index++; // subroutineName
         index++; // (
         compileParameterList();
         index++; // )
         index++; // {
-        int nVars=0;
         while(peekNext().equals("var")) {
-            nVars += compileVarDec();
+            compileVarDec();
         }
-        if (subroutine.equals("method")) nVars++;
+        int nVars = subroutineTable.varCount("local");
         write("function " + simpleFileName + "." + subroutineName + " " + nVars);
+        if(subroutine.equals("constructor")) {
+            write("push constant " + classTable.numberOfFIELD);
+            write("call Memory.alloc 1"); // Allocates memory for the
+            write("pop pointer 0");       // Sets THIS
+        } else if (subroutine.equals("method")) {
+            write("push argument 0");
+            write("pop pointer 0");
+        }
         compileStatements();
         index++; // }
     }
@@ -126,21 +128,17 @@ public class CompilationEngine {
         }
     }
 
-    private int compileVarDec() {
-        int nVars=0;
+    private void compileVarDec() {
         index++; // "var"
         String type = peekNext(); index++; // varType
         String name = peekNext(); index++; // varName
-        nVars++;
         subroutineTable.define(name, type, "local");
         while(peekNext().equals(",")) {
             index++; // ,
             name = peekNext(); index++; // varName
-            nVars++;
             subroutineTable.define(name, type, "local");
         }
         index++; // ;
-        return nVars;
     }
 
     private void compileStatements() {
@@ -250,13 +248,29 @@ public class CompilationEngine {
             index++; // (
             int nArgs = compileExpressionList();
             index++; // )
-            write("call "+ firstName + "." + secondName + " " + nArgs);
+            if (!classTable.contains(firstName) && !subroutineTable.contains(firstName)) { // Calling on a class name (constructor of other class or method of current class)
+                write("call "+ firstName + "." + secondName + " " + nArgs);
+            } else if (classTable.contains(firstName)) {
+                nArgs++;
+                String kind = classTable.kindOf(firstName);
+                int i = classTable.indexOf(firstName);
+                write("push " + kind + " " + i);
+                write("call "+ classTable.typeOf(firstName) + "." + secondName + " " + nArgs);
+            } else if (subroutineTable.contains(firstName)) {
+                nArgs++;
+                String kind = subroutineTable.kindOf(firstName);
+                int i = subroutineTable.indexOf(firstName);
+                write("push " + kind + " " + i);
+                write("call "+ subroutineTable.typeOf(firstName) + "." + secondName + " " + nArgs);
+            }
             return;
         }
         index++; // (
         int nArgs = compileExpressionList();
         index++; // )
-        write("call "+ simpleFileName + "." + firstName + nArgs);
+        write("push pointer 0");
+        if (nArgs==0) nArgs++;
+        write("call "+ simpleFileName + "." + firstName + " " + nArgs);
     }
 
     private int compileExpressionList() {
