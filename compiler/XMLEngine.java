@@ -16,7 +16,6 @@ public class XMLEngine {
     PrintWriter w;
     Vector<String> programLines;
 
-    String token;
     String simpleLine; // Non-parsed xml token.
 
     int index=-1;
@@ -32,7 +31,6 @@ public class XMLEngine {
 
             compile();
         }
-        Log.console("Done compiling XML.");
         w.close();
     }
 
@@ -110,7 +108,7 @@ public class XMLEngine {
         while(!peekNext().equals(")")) {
             writeAndAdvance(); // Parameter type
             writeAndAdvance(); // Parameter name
-            if(!peekFurther().equals(")")) writeAndAdvance(); // ,
+            if(!peekNext().equals(")")) writeAndAdvance(); // ,
         }
         write("</parameterList>");
     }
@@ -327,12 +325,13 @@ public class XMLEngine {
 
     private void writeAndAdvance() {
         index++;
+        if (index>=programLines.size()) return;
         write(programLines.elementAt(index));
     }
 
     private String [] peekNextComplete() { // Returns type and name of token being analyzed. Does NOT affect index.
         index++;
-        if (index==programLines.size()) {
+        if (index>=programLines.size()) {
             String [] failLine = {"", ""};
             return failLine;
         }

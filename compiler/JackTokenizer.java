@@ -18,7 +18,7 @@ public class JackTokenizer {
     private String currentFile;
     private Vector<String> programLines;
     private String program;
-    private PrintWriter w;
+    private PrintWriter w = null;
     private String currentToken;
     private int index=0;
 
@@ -31,20 +31,22 @@ public class JackTokenizer {
             currentToken = new String();
             index = 0;
             currentFile = jackFile.replaceAll(".jack", "T.xml");
-            //Log.console("Processing file: " + currentXMLFile);
             programLines = Util.loadFile(jackFile);
-            //Log.console(programLines);
+            programLines = Util.cleanFile(programLines);
             program = stringify();
             initializeIO(currentFile);
-            w.println("<tokens>");
+            Log.console("Starting to Tokenize file '"+ currentFile +"'");
+            w.println("<tokens>"); w.flush();
             XMLize();
-            w.println("</tokens>");
+            w.println("</tokens>"); w.flush();
+            Log.console("Successfully Tokenized file '"+ currentFile +"'");
         }
 
         w.close();
     }
 
     private void initializeIO(String currentXMLFile) {
+        if(w!=null) w.close();
         try {
             w = new PrintWriter(new BufferedWriter(new FileWriter(new File(currentXMLFile))));
         } catch(Exception e) {
@@ -248,7 +250,7 @@ public class JackTokenizer {
                 if(token.equals("\"")) token = "&quot;";
                 if(token.equals("&")) token = "&amp;";
             }
-            w.println("<"+ type +"> " + token + " </"+ type +">");
+            w.println("<"+ type +"> " + token + " </"+ type +">"); w.flush();
         }
     }
 

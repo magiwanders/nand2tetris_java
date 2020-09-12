@@ -16,13 +16,7 @@ public class Util {
             while(true) {
                 String line = r.readLine();
                 if(line==null) break;
-                if(line.contains("/**")) {
-                    while(!line.contains(" */")) {
-                        line = r.readLine();
-                    }
-                }
-                line = clean(line);
-                if(!line.equals("")) program.add(line);
+                if(!line.equals("")) program.add(line.trim());
             }
             r.close();
         } catch (Exception e) {
@@ -31,16 +25,35 @@ public class Util {
         return program;
     }
 
-    public static String clean(String line) {
-        line = removeComments(line); // Removes comments.
-        return line.trim();
-    }
-
-    private static String removeComments(String line) {
-        if(line.contains("//")) line = line.substring(0, line.indexOf("//")); // In case there is a commment i removes it.
-        if(line.contains("/**")) line = line.substring(0, line.indexOf("/**"));
-        if(line.contains(" */")) line = line.substring(0, line.indexOf(" */"));
-        return line;
+    public static Vector<String> cleanFile(Vector<String> program) {
+        int i=0;
+        while (i<program.size()) {
+            String currentLine = program.elementAt(i);
+            if (currentLine.contains("//")) {
+                int indexOfSingleLineComment = currentLine.indexOf("//");
+                String newLine = currentLine.substring(0, indexOfSingleLineComment);
+                if (newLine.isEmpty()) {
+                    program.removeElementAt(i); i--;
+                } else{
+                    program.add(i, newLine);
+                    program.removeElementAt(i+1);
+                }
+            } else if (currentLine.contains("/**")) {
+                if (currentLine.contains("*/")) {
+                    program.removeElementAt(i); i--; // Removes starting line.
+                } else {
+                    program.removeElementAt(i);
+                    currentLine = program.elementAt(i);
+                    while (!currentLine.contains("*/") && currentLine.contains("* ")) {
+                        program.removeElementAt(i);
+                        currentLine = program.elementAt(i);
+                    }
+                    program.removeElementAt(i); i--;
+                }
+            }
+            i++;
+        }
+        return program;
     }
 
     public static Vector<String> getFiles(String directory, String extension) {
