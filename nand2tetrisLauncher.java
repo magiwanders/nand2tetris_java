@@ -83,8 +83,9 @@ public class nand2tetrisLauncher extends Application {
     Log.console("Entering XMLEngine...");
     XMLEngine xmlEngine =  new XMLEngine(JackDirectory);
     Log.console("Done compiling XML.");
-    //CompilationEngine compilationEngine = new CompilationEngine(JackDirectory);
-    //saveLastDirectory(gui.getTextField1().getText());
+    CompilationEngine compilationEngine = new CompilationEngine(JackDirectory);
+    Log.console("Done compiling.");
+    saveLastDirectory(gui.getTextField1().getText());
   }
 
 

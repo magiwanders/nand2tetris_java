@@ -44,7 +44,7 @@ public class Util {
                 } else {
                     program.removeElementAt(i);
                     currentLine = program.elementAt(i);
-                    while (!currentLine.contains("*/") && currentLine.contains("* ")) {
+                    while (!currentLine.contains("*/") && currentLine.contains("*")) {
                         program.removeElementAt(i);
                         currentLine = program.elementAt(i);
                     }

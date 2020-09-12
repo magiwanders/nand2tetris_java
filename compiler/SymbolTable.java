@@ -9,7 +9,7 @@ public class SymbolTable {
 
     private Hashtable<String, Variable> table;
     private final Vector<String> acceptableKinds;
-    int numberOfARG, numberOfVAR, numberOfSTATIC, numberOfFIELD;
+    int numberOfARGUMENT, numberOfVAR, numberOfSTATIC, numberOfFIELD;
 
     public SymbolTable(String classOrsubroutine) {
         table = new Hashtable<>();
@@ -19,8 +19,8 @@ public class SymbolTable {
     }
 
     private void initializeSubroutine() {
-        acceptableKinds.addElement("ARG");
-        acceptableKinds.addElement("var");
+        acceptableKinds.addElement("argument");
+        acceptableKinds.addElement("local");
         numberOfSTATIC = -1;
         numberOfFIELD = -1;
     }
@@ -28,7 +28,7 @@ public class SymbolTable {
     private void initializeClass() {
         acceptableKinds.addElement("static");
         acceptableKinds.addElement("field");
-        numberOfARG = -1;
+        numberOfARGUMENT = -1;
         numberOfVAR = -1;
     }
 
@@ -39,8 +39,8 @@ public class SymbolTable {
         }
         int numberOfThatKind=0;
         switch (kind) {
-            case "ARG": numberOfThatKind = numberOfARG; numberOfARG++; kind = "argument"; break;
-            case "var": numberOfThatKind = numberOfVAR; numberOfVAR++; kind = "local"; break;
+            case "argument": numberOfThatKind = numberOfARGUMENT; numberOfARGUMENT++; break;
+            case "local": numberOfThatKind = numberOfVAR; numberOfVAR++; break;
             case "static": numberOfThatKind = numberOfSTATIC; numberOfSTATIC++; break;
             case "field": numberOfThatKind = numberOfFIELD; numberOfFIELD++; break;
         }
@@ -52,13 +52,13 @@ public class SymbolTable {
         if(numberOfFIELD!=-1) numberOfFIELD=0;
         if(numberOfSTATIC!=-1) numberOfSTATIC=0;
         if(numberOfVAR!=-1) numberOfVAR=0;
-        if(numberOfARG!=-1) numberOfARG=0;
+        if(numberOfARGUMENT!=-1) numberOfARGUMENT=0;
     }
 
     public int varCount(String kind) {
         switch (kind) {
-            case "ARG": return numberOfARG;
-            case "var": return numberOfVAR;
+            case "argument": return numberOfARGUMENT;
+            case "local": return numberOfVAR;
             case "static": return numberOfSTATIC;
             case "field": return numberOfFIELD;
             default: return -1;

@@ -16,28 +16,39 @@ public class CompilationEngine {
     PrintWriter w;
     Vector<String> programLines;
 
+    SymbolTable classTable = new SymbolTable("CLASS");
+    SymbolTable subroutineTable = new SymbolTable("SUBROUTINE");
+
     String simpleLine; // Non-parsed xml token.
+    String simpleFileName; // Extensionless VM file name.
 
     int index=-1;
 
+    // Counters
+    int alwaysIncrementingConstant=0;
+
     public CompilationEngine(String jackDirectory) {
-        listOfXMLFiles = Util.getFiles(jackDirectory, ".xml");
+        listOfXMLFiles = Util.getFiles(jackDirectory, "T.xml");
         for(String xmlFile : listOfXMLFiles) {
             resetFileData(xmlFile);
 
             programLines = Util.loadFile(xmlFile);
+            programLines.removeElementAt(0); // <tokens>
+            programLines.removeElementAt(programLines.size()-1); // </tokens>
+            simpleFileName = Util.getSimpleFileName(currentVMFile);
 
-            compile();
+            compileClass();
         }
-        Log.console("Done compiling XML.");
         w.close();
     }
 
     private void resetFileData(String xmlFile) {
         index = -1;
+        classTable.clear();
+        subroutineTable.clear();
         currentVMFile = new String();
         programLines = new Vector<>();
-        currentVMFile = xmlFile.replaceAll(".xml", ".vm");
+        currentVMFile = xmlFile.replaceAll("T.xml", ".vm");
         initializeIO();
     }
 
@@ -49,84 +60,90 @@ public class CompilationEngine {
         }
     }
 
-    private void compile() {
-        switch(peekNext()) {
-            case "class" : compileClass(); break;
-            case "function" : compileSubroutine(); break;
-            case "constructor" : compileSubroutine(); break;
-            case "method" : compileSubroutine(); break;
-            case "static" : compileClassVarDec(); break;
-            case "field" : compileClassVarDec(); break;
-        }
-    }
-
     private void compileClass() {
-        write("<class>");
         index++; // "class"
         index++; // className
         index++; // {
-        compile();
+        while(peekNext().equals("field")||peekNext().equals("static")) {
+            compileClassVarDec();
+        }
+        while (peekNext().equals("constructor")||peekNext().equals("function")||peekNext().equals("method")) {
+            compileSubroutine();
+        }
         index++; // }
-        write("</class>");
     }
 
     private void compileClassVarDec() {
-        write("<classVarDec>");
-        index++; // "static"/"field"
-        index++; // type
-        index++; // varName
+        String kind = peekNext(); index++; // "static"/"field"
+        String type = peekNext(); index++; // type
+        String name = peekNext(); index++; // varName
+        classTable.define(name, type, kind);
         while(peekNext().equals(",")) {
             index++; // ,
-            index++; // Var name
+            name = peekNext(); index++; // Var name
+            classTable.define(name, type, kind);
         }
         index++; // ;
-        write("</classVarDec>");
-        compile();
     }
 
     private void compileSubroutine() {
-        write("<subroutineDec>");
-        index++; // "function"/"construtor"/"method"
-        index++; // type/"void"
-        index++; // subroutineName
+        // All the class variables are been declared, now classVariablesCounter contains exactly their number.
+        subroutineTable.clear();
+        String subroutine = peekNext(); index++; // "function"/"construtor"/"method"
+        if(subroutine.equals("constructor")) {
+            write("push constant " + classTable.numberOfFIELD);
+            write("call Memory.alloc 1"); // Allocates memory for the
+            write("pop pointer 0");       // Sets THIS
+        }
+        peekNext(); index++; // type/"void"
+        String subroutineName = peekNext(); index++; // subroutineName
         index++; // (
         compileParameterList();
         index++; // )
-        write("<subroutineBody>");
         index++; // {
-        while(peekNext().equals("var")) compileVarDec();
+        int nVars=0;
+        while(peekNext().equals("var")) {
+            nVars += compileVarDec();
+        }
+        if (subroutine.equals("method")) nVars++;
+        write("function " + simpleFileName + "." + subroutineName + " " + nVars);
         compileStatements();
         index++; // }
-        write("</subroutineBody>");
-        write("</subroutineDec>");
-        compile();
     }
 
     private void compileParameterList() {
-        write("<parameterList>");
-        while(!peekNext().equals(")")) {
-            index++; // Parameter type
-            index++; // Parameter name
-            if(!peekFurther().equals(")")) index++; // ,
+        if (peekNext().equals(")")) return;
+        else {
+            String type = peekNext(); index++; // Parameter type
+            String name = peekNext(); index++; // Parameter name
+            subroutineTable.define(name, type, "argument");
+            while (peekNext().equals(",")) {
+                index++; // ,
+                type = peekNext(); index++; // Parameter type
+                name = peekNext(); index++; // Parameter name
+                subroutineTable.define(name, type, "argument");
+            }
         }
-        write("</parameterList>");
     }
 
-    private void compileVarDec() {
-        write("<varDec>");
+    private int compileVarDec() {
+        int nVars=0;
         index++; // "var"
-        index++; // varType
-        index++; // varName
+        String type = peekNext(); index++; // varType
+        String name = peekNext(); index++; // varName
+        nVars++;
+        subroutineTable.define(name, type, "local");
         while(peekNext().equals(",")) {
             index++; // ,
-            index++; // varName
+            name = peekNext(); index++; // varName
+            nVars++;
+            subroutineTable.define(name, type, "local");
         }
         index++; // ;
-        write("</varDec>");
+        return nVars;
     }
 
     private void compileStatements() {
-        write("<statements>");
         while(!peekNext().equals("}")) {
             switch (peekNext()) {
                 case "let" : compileLet(); break;
@@ -136,13 +153,11 @@ public class CompilationEngine {
                 case "return" : compileReturn(); break;
             }
         }
-        write("</statements>");
     }
 
     private void compileLet() {
-        write("<letStatement>");
         index++; // "let"
-        index++; // varName
+        String name = peekNext(); index++; // varName
         if(peekNext().equals("[")) {
             index++; // [
             compileExpression();
@@ -151,103 +166,132 @@ public class CompilationEngine {
         index++; // =
         compileExpression();
         index++; // ;
-        write("</letStatement>");
+
+        if (subroutineTable.contains(name)) {
+            String kind = subroutineTable.kindOf(name);
+            int i = subroutineTable.indexOf(name);
+            write("pop " + kind + " " + i);
+        } else {
+            if (classTable.contains(name)) {
+                String kind = classTable.kindOf(name);
+                int i = classTable.indexOf(name);
+                write("pop " + kind + " " + i);
+            }
+        }
     }
 
     private void compileIf() {
-        write("<ifStatement>");
+        String L1 = "IF_FALSE_" + alwaysIncrementingConstant;
+        String L2 = "IF_END_" + alwaysIncrementingConstant;
+        alwaysIncrementingConstant++;
         index++; // "if"
         index++; // (
         compileExpression();
+        write("not");
+        write("if-goto " + L1);
         index++; // )
         index++; // {
         compileStatements();
         index++; // }
+        write("goto " + L2);
+        write("label " + L1);
         if (peekNext().equals("else")) {
             index++; // else
             index++; // {
             compileStatements();
             index++; // }
         }
-        write("</ifStatement>");
+        write("label " + L2);
     }
 
     private void compileWhile() {
-        write("<whileStatement>");
+        String L1 = "WHILE_EXP_" + alwaysIncrementingConstant;
+        String L2 = "WHILE_END_" + alwaysIncrementingConstant;
+        alwaysIncrementingConstant++;
         index++; // "while"
+        write("label " + L1);
         index++; // (
         compileExpression();
+        write("not");
+        write("if-goto "+ L2);
         index++; // )
         index++; // {
         compileStatements();
         index++; // }
-        write("</whileStatement>");
+        write("goto " + L1);
+        write("label " + L2);
     }
 
     private void compileReturn() {
-        write("<returnStatement>");
         index++; // "return"
         if(!peekNext().equals(";")) {
             compileExpression();
+            write("return");
+            index++; // ;
+            return;
         }
+        write("push constant 0");
+        write("return");
         index++; // ;
-        write("</returnStatement>");
     }
 
     private void compileDo() {
-        write("<doStatement>");
         index++; // "do"
         compileSubroutineCall();
         index++; // ;
-        write("</doStatement>");
+        write("pop temp 0");
     }
 
     private void compileSubroutineCall() {
-        index++; // Subroutine name OR Class name OR Var name
+        String firstName = peekNext(); index++; // Subroutine name OR Class name OR Var name
         if(peekNext().equals(".")) { // Means last piece was NOT a subroutine of the same class
             index++; // .
-            index++; // subroutineName
+            String secondName = peekNext(); index++; // subroutineName
             index++; // (
-            compileExpressionList();
+            int nArgs = compileExpressionList();
             index++; // )
+            write("call "+ firstName + "." + secondName + " " + nArgs);
             return;
         }
         index++; // (
-        compileExpressionList();
+        int nArgs = compileExpressionList();
         index++; // )
+        write("call "+ simpleFileName + "." + firstName + nArgs);
     }
 
-    private void compileExpressionList() {
-        write("<expressionList>");
+    private int compileExpressionList() {
+        int nArgs = 0;
         while (!peekNext().equals(")")) {
             compileExpression();
+            nArgs++;
             if(!peekNext().equals(")")) index++; // ,
         }
-        write("</expressionList>");
+        return nArgs;
     }
 
     private void compileExpression() {
-        write("<expression>");
         compileTerm(); // index++; // Dummy term
         if (isOp(peekNext())) {
-            index++; // Op
+            String op = peekNext(); index++; // Op
             compileTerm();  // Dummy term
+            write(opToVM(op));
         }
-        write("</expression>");
     }
 
     private void compileTerm() {
-        write("<term>");
         if (peekNextType().equals("integerConstant")) {
+            int currentInt = Integer.parseInt(peekNext());
+            write("push constant " + currentInt);
             index++; // Integer
         }
         else if (peekNextType().equals("stringConstant")) index++; // String
         else if (isKeywordConstant()) {
-            index++; // KeyboardConstant
+            write(keywordConstantValue()); index++; // KeyboardConstant
         }
         else if (peekNext().length()==1 && (peekNext().charAt(0)=='~' || peekNext().charAt(0)=='-')) {
-            index++; // UnaryOp
+            String op = peekNext(); index++; // UnaryOp
             compileTerm();
+            write(unaryOpToVM(op));
         }
         else if (peekNext().length()==1 && peekNext().charAt(0)=='(') {
             index++; // (
@@ -261,9 +305,53 @@ public class CompilationEngine {
         } else if (isLetter(peekNext().charAt(0)) && (peekFurther().equals("(") || peekFurther().equals("."))) {
             compileSubroutineCall();
         } else if (!(isLetter(peekNext().charAt(0)) && (peekFurther().equals("(") || peekFurther().equals(".") || peekFurther().equals("[")))) {
-            index++; // varName
+            String name = peekNext(); index++; // varName
+            if (subroutineTable.contains(name)) {
+                String kind = subroutineTable.kindOf(name);
+                int i = subroutineTable.indexOf(name);
+                write("push " + kind + " " + i);
+            } else {
+                if (classTable.contains(name)) {
+                    String kind = classTable.kindOf(name);
+                    int i = classTable.indexOf(name);
+                    write("push " + kind + " " + i);
+                }
+            }
         }
-        write("</term>");
+    }
+
+    private String keywordConstantValue() {
+        switch (peekNext()) {
+            case "true": return "push constant 1\nneg";
+            case "false": return "push constant 0";
+            case "null": return "push constant 0";
+            case "this": return "push pointer 0";
+        }
+        return "";
+    }
+
+
+    private String opToVM(String op) {
+        switch (op) {
+            case "+": return "add";
+            case "-": return "sub";
+            case "*": return "call Math.multiply 2";
+            case "/": return "call Math.divide 2";
+            case "&amp;": return "and";
+            case "|": return "or";
+            case "&lt;": return "lt";
+            case "&gt;": return "gt";
+            case "=": return "eq";
+        }
+        return "";
+    }
+
+    private String unaryOpToVM(String op) {
+        switch (op) {
+            case "~": return "not";
+            case "-": return "neg";
+        }
+        return "";
     }
 
     private boolean isLetter(char candidate) {
@@ -315,7 +403,7 @@ public class CompilationEngine {
     }
 
 
-    // Writing XML file methods
+    // Writing VM file methods
 
     private void write(String toWrite) {
         w.println(toWrite);
@@ -324,7 +412,7 @@ public class CompilationEngine {
 
     private String [] peekNextComplete() { // Returns type and name of token being analyzed. Does NOT affect index.
         index++;
-        if (index==programLines.size()) {
+        if (index>=programLines.size()) {
             String [] failLine = {"", ""};
             return failLine;
         }
