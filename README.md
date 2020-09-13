@@ -21,7 +21,7 @@ The projects generally follow the proposed implementation presented in the cours
 I do my best to comment the HACK (pun intended) out of my code, but here is a brief list of the major differences:
  - None of the above projects is standalone, they CANNOT be run from terminal. They are managed by a graphical application, whose functional part is held in 
  nand2tetris.java, in the parent directory, and the graphical part by the gui.java in "gui" folder. The application is very intuitive and needs no usage explaination, but remember: 
- >:small_red_triangle:<b>main() for the whole project is in nand2tetris.java</b>:small_red_triangle:
+ >:small_red_triangle:main() for the whole project is in nand2tetris.java:small_red_triangle:
  - "utilities" folder contains utility static methods that all the projects use.
  - "references" folder contains a handful of handwritten PDF Hack Computer Cheat Sheets I heavily used while writing code.
  - "hackComputer" contains a re-implementation of the Hack Computer in Java, following projects 1-5. As of september '20, it almost works. ALMOST. Currently working on a JUnit test for CPU. Ah, and I still haven't re-implemented the screen.
