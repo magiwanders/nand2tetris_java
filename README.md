@@ -9,7 +9,7 @@ All of the projects in this repository are implemented in Java. But there is mor
 
 ## Overview
 
-### Naked projects
+### 'Naked' projects
 The courses have 4 major software projects: 
  - Project 6 - The Assembler ---> "assembler" folder
  - Project 7&8 - The VM Translator ---> "vmtranslator" folder
