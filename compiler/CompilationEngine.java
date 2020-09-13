@@ -9,7 +9,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Vector;
 
-public class CompilationEngine {
+public class CompilationEngine { // COMPILATOR IS COMPLETE!!!
 
     Vector<String> listOfXMLFiles;
     String currentVMFile;
