@@ -12,17 +12,23 @@ public class ROM {
     public boolean [] write(boolean [] in, boolean [] address, boolean load) {
         Dmux dmux = new Dmux();
         Mux16 mux16 = new Mux16();
-        boolean address0 = address[0];
-        boolean [] address114 = {address[1], address[2], address[3], address[4], address[5], address[6], address[7], address[8], address[9], address[10], address[11], address[12], address[13], address[14]};
-        boolean load0 = dmux.a(load, address0);
-        boolean load1 = dmux.b(load, address0);
-        boolean [] out0 = ram16k0.write(in, address114, load0);
-        boolean [] out1 = ram16k1.write(in, address114, load1);
-        return mux16.out(out0, out1, address0);
+        boolean address1 = address[1];
+        boolean [] address215 = {address[2], address[3], address[4], address[5], address[6], address[7], address[8], address[9], address[10], address[11], address[12], address[13], address[14], address[15]};
+        boolean load0 = dmux.a(load, address1);
+        boolean load1 = dmux.b(load, address1);
+        boolean [] out0 = ram16k0.write(in, address215, load0);
+        boolean [] out1 = ram16k1.write(in, address215, load1);
+        return mux16.out(out0, out1, address1);
     }
 
     public boolean [] read(boolean [] address) {
-        return write(Gen.false16(), address, false);
+        boolean [] out = Gen.false16();
+        boolean address1 = address[1];
+        boolean [] address215 = {address[2], address[3], address[4], address[5], address[6], address[7], address[8], address[9], address[10], address[11], address[12], address[13], address[14], address[15]};
+        Dmux dmux = new Dmux();
+        if(dmux.a(true, address1)) out = ram16k0.read(address215);
+        if(dmux.b(true, address1)) out = ram16k1.read(address215);
+        return out;
     }
 
     public void update() {

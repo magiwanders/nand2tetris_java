@@ -45,7 +45,7 @@ public class Gui extends Stage {
         jackFile = new HBox();
           label1 = new Label("Jack File:     ");
           textField1 = new TextField();
-          load1 = new Button("Load");
+          load1 = new Button("Load directory containing .jack files");
 
         compileButton = new Button("Compile");
         vmcode = new HBox();

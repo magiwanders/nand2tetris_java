@@ -4,9 +4,14 @@
 
 */
 
-import gui.Gui;
+import compiler.CompilationEngine;
+import compiler.JackTokenizer;
+import compiler.XMLEngine;
+import gui.*;
 import assembler.*;
+import utilities.Log;
 import vmtranslator.*;
+import hackComputer.*;
 
 import javafx.application.*;
 import javafx.stage.*;
@@ -21,15 +26,18 @@ public class nand2tetrisLauncher extends Application {
     gui.getLoad1Button().setOnAction( e -> load1ButtonHandle() );
     gui.getLoad2Button().setOnAction( e -> load2ButtonHandle() );
     gui.getLoad3Button().setOnAction( e -> load3ButtonHandle() );
+    gui.getExecuteButton().setOnAction( e -> executeButtonHandle());
 
     gui.getAssembleButton().setOnAction( e -> assembleButtonHandle() );
     gui.getTranslateButton().setOnAction( e -> translateButtonHandle() );
-    gui.getCompileButton().setOnAction(e -> compileButtonHandle());
+    gui.getCompileButton().setOnAction( e -> compileButtonHandle() );
 
     gui.getTextField1().textProperty().addListener((obs, oldText, newText) -> resetOuputFields1()); // All reset the TextFields UNDER them.
     gui.getTextField2().textProperty().addListener((obs, oldText, newText) -> resetOuputFields2());
     gui.getTextField3().textProperty().addListener((obs, oldText, newText) -> resetOuputFields3());
   }
+
+
 
   private void load1ButtonHandle() {
     gui.getTextField1().setText(getJackFile());
@@ -43,13 +51,54 @@ public class nand2tetrisLauncher extends Application {
     gui.getTextField3().setText(getAsmFile());
   }
 
+  private void executeButtonHandle() {
+    if(gui.getTextField4().getText().equals("")) gui.getErrorLabel().setText("No .hack file!");
+    else {
+      HackComputerGui hackComputerGui = new HackComputerGui();
+      HackComputer hackComputer = new HackComputer(gui.getTextField4().getText(), hackComputerGui);
+    }
+  }
+
+
+
+  private void assembleButtonHandle() {
+    String assemblyFile = gui.getTextField3().getText();                                    // Retrieves .asm file to assemble.
+    HackAssembler assembler = new HackAssembler(assemblyFile);                              // ASSEMBLER
+    gui.getTextField4().setText(assemblyFile.replaceAll(".asm", ".hack")); // Sets output textbox with output file path.
+    saveLastDirectory();                                                                    // Saves output folder for next FileChooser instance.
+  }
+
+  private void translateButtonHandle() {
+    File VMDirectory = new File(gui.getTextField2().getText());                                        // Retrieves folder with .vm files.
+    CodeWriter translator = new CodeWriter(VMDirectory);                                               // TRANSLATOR
+    String filePath = VMDirectory.getAbsolutePath() + File.separator + VMDirectory.getName() + ".asm"; // Sets assembler textbox with .asm file path.
+    gui.getTextField3().setText(filePath);
+    assembleButtonHandle();
+  }
+
+  private void compileButtonHandle() {
+    String JackDirectory = gui.getTextField1().getText();
+    Log.console("Entering Tokenizer...");
+    JackTokenizer jackTokenizer = new JackTokenizer(JackDirectory);
+    Log.console("Entering XMLEngine...");
+    XMLEngine xmlEngine =  new XMLEngine(JackDirectory);
+    Log.console("Done compiling XML.");
+    CompilationEngine compilationEngine = new CompilationEngine(JackDirectory);
+    Log.console("Done compiling.");
+    saveLastDirectory(gui.getTextField1().getText());
+  }
+
+
+
   private String getJackFile() {
-    FileChooser fileChooser = new FileChooser();                                                                           // Creates FileChooser.
-    fileChooser.setInitialDirectory(retrieveSavedDirectory());                                                             // Sets last visited directory as starting point.
-    FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Assembly files (*.jack)", "*.jack"); // Only show .asm files.
-    fileChooser.getExtensionFilters().add(extFilter);
-    File file = fileChooser.showOpenDialog(new Stage());                                                                   // Retrieves chosen file.
-    return file.getAbsolutePath();
+    DirectoryChooser directoryChooser = new DirectoryChooser();     // Creates a DirectoryChooser.
+    directoryChooser.setInitialDirectory(retrieveSavedDirectory()); // Sets it to be opened on the last opened directory.
+    File directory = directoryChooser.showDialog(new Stage());      // Retrieves the chosen directory.
+    if (!containsJackFile(directory)) {                               // If there are no .vm files gives out an error.
+      gui.getErrorLabel().setText("ERROR: Chosen directory does not contain any .jack file.");
+      return "";
+    }
+    return directory.getAbsolutePath();
   }
 
   private String getVMDirectory() {
@@ -86,6 +135,16 @@ public class nand2tetrisLauncher extends Application {
     return false;
   }
 
+  private boolean containsJackFile(File directory) {
+    String [] files = directory.list();
+    if (files != null) {
+      for(String file : files) {
+        if (file.contains(".jack")) return true;
+      }
+    }
+    return false;
+  }
+
   private String getAsmFile() {
     FileChooser fileChooser = new FileChooser();                                                                           // Creates FileChooser.
     fileChooser.setInitialDirectory(retrieveSavedDirectory());                                                             // Sets last visited directory as starting point.
@@ -95,35 +154,19 @@ public class nand2tetrisLauncher extends Application {
     return file.getAbsolutePath();
   }
 
-  private void assembleButtonHandle() {
-    String assemblyFile = gui.getTextField3().getText();                                    // Retrieves .asm file to assemble.
-    HackAssembler assembler = new HackAssembler(assemblyFile);                              // ASSEMBLER
-    gui.getTextField4().setText(assemblyFile.replaceAll(".asm", ".hack")); // Sets output textbox with output file path.
-    saveLastDirectory();                                                                    // Saves output folder for next FileChooser instance.
-  }
-
-  private void translateButtonHandle() {
-    File VMDirectory = new File(gui.getTextField2().getText());                                        // Retrieves folder with .vm files.
-    CodeWriter translator = new CodeWriter(VMDirectory);                                               // TRANSLATOR
-    String filePath = VMDirectory.getAbsolutePath() + File.separator + VMDirectory.getName() + ".asm"; // Sets assembler textbox with .asm file path.
-    gui.getTextField3().setText(filePath);
-    assembleButtonHandle();
-  }
-
   private void saveLastDirectory() {// Saves the folder to which the last output .hack file has been saved.
+    saveLastDirectory(gui.getTextField4().getText());
+  }
+
+  private void saveLastDirectory(String directory) {
     try {
       String basePath = new File("").getAbsolutePath();
       PrintWriter w = new PrintWriter(new BufferedWriter(new FileWriter(new File(basePath + File.separator + "lastPath.txt"))));
-      w.println(new File(gui.getTextField4().getText()).getParent());
+      w.println(new File(directory).getParent());
       w.close();
     } catch (Exception e)  {
       e.printStackTrace();
     }
-  }
-
-
-
-  private void compileButtonHandle() {
   }
 
   private void resetOuputFields1() {

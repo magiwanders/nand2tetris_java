@@ -28,7 +28,15 @@ public class Ram16k {
     }
 
     public boolean [] read(boolean [] address) {
-        return write(Gen.false16(), address, false);
+        boolean [] out = Gen.false16();
+        boolean [] address01 = {address[0], address[1]};
+        boolean [] address213 = {address[2], address[3], address[4], address[5], address[6], address[7], address[8], address[9], address[10], address[11], address[12], address[13]};
+        Dmux4way dmux4way = new Dmux4way();
+        if(dmux4way.a(true, address01)) out = ram4k0.read(address213);
+        if(dmux4way.b(true, address01)) out = ram4k1.read(address213);
+        if(dmux4way.c(true, address01)) out = ram4k2.read(address213);
+        if(dmux4way.d(true, address01)) out = ram4k3.read(address213);
+        return out;
     }
 
     public void update() {
