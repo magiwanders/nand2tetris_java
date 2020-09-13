@@ -23,6 +23,7 @@ public class CompilationEngine {
     String simpleFileName; // Extensionless VM file name.
 
     int index=-1;
+    String className;
 
     // Counters
     int alwaysIncrementingConstant=0;
@@ -62,7 +63,7 @@ public class CompilationEngine {
 
     private void compileClass() {
         index++; // "class"
-        index++; // className
+        className = peekNext(); index++; // className
         index++; // {
         while(peekNext().equals("field")||peekNext().equals("static")) {
             compileClassVarDec();
@@ -93,6 +94,7 @@ public class CompilationEngine {
         peekNext(); index++; // type/"void"
         String subroutineName = peekNext(); index++; // subroutineName
         index++; // (
+        if(subroutine.equals("method")) subroutineTable.define("this", className, "argument");
         compileParameterList();
         index++; // )
         index++; // {
@@ -265,31 +267,35 @@ public class CompilationEngine {
         if(peekNext().equals(".")) { // Means last piece was NOT a subroutine of the same class
             index++; // .
             String secondName = peekNext(); index++; // subroutineName
-            index++; // (
-            int nArgs = compileExpressionList();
-            index++; // )
             if (!classTable.contains(firstName) && !subroutineTable.contains(firstName)) { // Calling on a class name (constructor of other class or method of current class)
+                index++; // (
+                int nArgs = compileExpressionList();
+                index++; // )
                 write("call "+ firstName + "." + secondName + " " + nArgs);
             } else if (classTable.contains(firstName)) {
-                nArgs++;
                 String kind = classTable.kindOf(firstName);
                 int i = classTable.indexOf(firstName);
                 write("push " + kind + " " + i);
+                index++; // (
+                int nArgs = compileExpressionList(); nArgs++;
+                index++; // )
                 write("call "+ classTable.typeOf(firstName) + "." + secondName + " " + nArgs);
             } else if (subroutineTable.contains(firstName)) {
-                nArgs++;
                 String kind = subroutineTable.kindOf(firstName);
                 int i = subroutineTable.indexOf(firstName);
                 write("push " + kind + " " + i);
+                index++; // (
+                int nArgs = compileExpressionList(); nArgs++;
+                index++; // )
                 write("call "+ subroutineTable.typeOf(firstName) + "." + secondName + " " + nArgs);
             }
             return;
         }
+        write("push pointer 0");
         index++; // (
         int nArgs = compileExpressionList();
         index++; // )
-        write("push pointer 0");
-        if (nArgs==0) nArgs++;
+        nArgs++;
         write("call "+ simpleFileName + "." + firstName + " " + nArgs);
     }
 
