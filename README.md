@@ -31,6 +31,7 @@ I do my best to comment the HACK (pun intended) out of my code, but here is a br
   - Cleanup and more thorough comment of project 10&11
   - Extend utilities to Project 6, 7, 8.
   - Fix broken CPU and add working SCREEN (only then see ways to make it all more efficient)
+  - Close the chain of Compile>VMTranslate>Assemble inside nand2tetris.java
   - Make VM translator more efficient (bring it to under 25000 lines for the whole os, right now it is 40000+ and doesn't even fit in the Hack Computer)
   - Make "if" compiling more efficient
   - Long term... study feasibility to write some machine language directly in the compiler for some recurring simple code and modify VM translator to ignore it...
