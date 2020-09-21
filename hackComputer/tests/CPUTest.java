@@ -10,10 +10,10 @@ public class CPUTest {
         CPU cpu = new CPU();
         boolean [] instruction, inM;
 
-        instruction = program[i];
-        inM = inMs[i];
-        reset = resets[i];
-        cpu.update
+        //instruction = program[i];
+        //inM = inMs[i];
+        //reset = resets[i];
+        //cpu.update
 
     }
 }
